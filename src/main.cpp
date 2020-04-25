@@ -2,38 +2,40 @@
 #include <SPI.h>
 #include <epd1in54_V2.h>
 #include <epdpaint.h>
-#include "WifiAP.h"
+#include "SetupManager.h"
 #include "Log.h"
 #include "InputManager.h"
 #include "PowerManager.h"
 
-WifiAP wifiAP;
+SetupManager* setupMgr = nullptr;
 
 unsigned char image[200*200];
 Paint paint(image, 200, 200);
 Epd epd;
 
-unsigned long time_start_ms;
-
 void setup()
 {
     Serial2.begin(9600);
-    
+
     Serial.begin(115200);
     Log().Info("MAIN") << "setup" << std::endl;
-
-    //wifiAP.Start("SpotiPi_Settings", "12345678");
 
     Log().Info("MAIN") << "e-Paper init" << std::endl;
     if (epd.Init() != 0)
       Log().Error("MAIN") << "e-Paper init failed" << std::endl;
 
-    paint.Clear(1);
-    epd.Display(paint.GetImage());
-    time_start_ms = millis();
-
     PowerManager::Init();
     InputManager::Init();
+
+    bool setupMode = digitalRead(BT2_PIN) == HIGH;
+
+    paint.Clear(1);
+    epd.Display(paint.GetImage());
+
+    if (setupMode)
+    {
+        setupMgr = new SetupManager();
+    }
 
     Log().Info("MAIN") << "ready" << std::endl;
 }
@@ -41,58 +43,78 @@ void setup()
 
 void loop()
 {
-  //Log().Info("MAIN") << "update" << std::endl;
+    //Log().Info("MAIN") << "update" << std::endl;
 
-  //wifiAP.Update();
+    auto is = InputManager::GetInputState();
+    auto ps = PowerManager::GetPowerState();
 
-  auto is = InputManager::GetInputState();
-  auto ps = PowerManager::GetPowerState();
+    if (setupMgr != nullptr)
+    {
+        setupMgr->Update();
 
-  String s = "";
-  while (Serial2.available()) 
-  {
-    s += char(Serial2.read());
-  }
-  if (s != "")
-    Serial.print(s);
+        paint.Clear(1);
+        paint.DrawStringAt(0, 0, "  Setup Mode", &Font20, 0);
+        paint.DrawStringAt(0, 40,  "WiFi-SSID: ", &Font16, 0);
+        paint.DrawStringAt(0, 60,  setupMgr->GetWifiSsid(), &Font20, 0);
+        paint.DrawStringAt(0, 100, "WiFi-KEY:", &Font16, 0);
+        paint.DrawStringAt(0, 120, setupMgr->GetWifiKey(), &Font24, 0);
+        if (!epd.IsBusy())
+            epd.DisplayPart(paint.GetImage(), false);
 
-  Serial2.println(s + " World " + String(millis()));
-  
-  float time_now_s = (float)(millis() - time_start_ms) / 1000;
+        if (is.buttons[0] > 0 || setupMgr->SetupCompleted())
+        {
+            delete setupMgr;
+            ESP.restart();
+        }
+    }
+    else
+    {
+        String s = "";
+        while (Serial2.available()) 
+        {
+            s += char(Serial2.read());
+        }
+        if (s != "")
+            Serial.print(s);
 
-  paint.Clear(1);   
-  paint.DrawStringAt(0, 0, (String(time_now_s)).c_str(), &Font24, 0);
-  
-  paint.DrawStringAt(0, 20, (String("BTN: ") + String(is.buttons[0]) + String(is.buttons[1]) + String(is.buttons[2]) + String(is.buttons[3])).c_str(), &Font24, 0);
-  paint.DrawStringAt(0, 40, (String("BAT: ") + String(ps.batteryVoltage)).c_str(), &Font24, 0);
-  paint.DrawStringAt(0, 60, (String("FULL: ") + String(ps.batteryIsFull)).c_str(), &Font24, 0);
-  paint.DrawStringAt(0, 80, (String("USB: ") + String(ps.isOnUsb)).c_str(), &Font24, 0);
-  paint.DrawStringAt(0, 100, (String("RFID: ") + is.rfId).c_str(), &Font20, 0);
-  paint.DrawStringAt(0, 120, (String("POTI: ") + is.poti).c_str(), &Font24, 0);
+        Serial2.println(s + " World " + String(millis()));
+        
+        float time_now_s = (float)millis() / 1000;
 
-  if (is.buttons[0] + is.buttons[1] + is.buttons[2] + is.buttons[3] > 0)
-    epd.WaitUntilIdle();
+        paint.Clear(1);
+        paint.DrawStringAt(0, 0, (String(time_now_s)).c_str(), &Font24, 0);
+        
+        paint.DrawStringAt(0, 20, (String("BTN: ") + String(is.buttons[0]) + String(is.buttons[1]) + String(is.buttons[2]) + String(is.buttons[3])).c_str(), &Font24, 0);
+        paint.DrawStringAt(0, 40, (String("BAT: ") + String(ps.batteryVoltage)).c_str(), &Font24, 0);
+        paint.DrawStringAt(0, 60, (String("FULL: ") + String(ps.batteryIsFull)).c_str(), &Font24, 0);
+        paint.DrawStringAt(0, 80, (String("USB: ") + String(ps.isOnUsb)).c_str(), &Font24, 0);
+        paint.DrawStringAt(0, 100, (String("RFID: ") + is.rfId).c_str(), &Font20, 0);
+        paint.DrawStringAt(0, 120, (String("POTI: ") + is.poti).c_str(), &Font24, 0);
 
-  if (!epd.IsBusy())
-    epd.DisplayPart(paint.GetImage(), false);
+        if (is.buttons[0] + is.buttons[1] + is.buttons[2] + is.buttons[3] > 0)
+            epd.WaitUntilIdle();
 
-  if (is.buttons[0] > 0)
-  {
-    digitalWrite(POWER_OFF_PIN, HIGH);
-  }
+        if (!epd.IsBusy())
+            epd.DisplayPart(paint.GetImage(), false);
 
-  if (is.buttons[1] > 0)
-  {
-    digitalWrite(PI_POWER_PIN, HIGH);
-  }
+        if (is.buttons[0] > 0)
+        {
+            digitalWrite(POWER_OFF_PIN, HIGH);
+        }
 
-  if (is.buttons[2] > 0)
-  {
-    digitalWrite(PI_POWER_PIN, LOW);
-  }
+        if (is.buttons[1] > 0)
+        {
+            digitalWrite(PI_POWER_PIN, HIGH);
+        }
 
-  if (is.buttons[3] > 0)
-  {
+        if (is.buttons[2] > 0)
+        {
+            digitalWrite(PI_POWER_PIN, LOW);
+        }
 
-  }
+        if (is.buttons[3] > 0)
+        {
+            ESP.restart();
+        }
+    }
 }
