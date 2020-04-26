@@ -6,12 +6,30 @@
 #include "Log.h"
 #include "InputManager.h"
 #include "PowerManager.h"
+#include "SettingsManager.h"
 
+SettingsManager settings;
 SetupManager* setupMgr = nullptr;
 
 unsigned char image[200*200];
 Paint paint(image, 200, 200);
 Epd epd;
+
+void InitSettings()
+{
+    bool setupMode = digitalRead(BT2_PIN) == HIGH;
+    bool factoryReset = setupMode && digitalRead(BT3_PIN) == HIGH;
+    if (factoryReset)
+    {
+        settings.ClearEEPROM();
+    }
+    settings.LoadFromEEPROM();
+
+    if (setupMode)
+    {
+        setupMgr = new SetupManager(settings);
+    }
+}
 
 void setup()
 {
@@ -24,18 +42,12 @@ void setup()
     if (epd.Init() != 0)
       Log().Error("MAIN") << "e-Paper init failed" << std::endl;
 
-    PowerManager::Init();
-    InputManager::Init();
-
-    bool setupMode = digitalRead(BT2_PIN) == HIGH;
-
     paint.Clear(1);
     epd.Display(paint.GetImage());
 
-    if (setupMode)
-    {
-        setupMgr = new SetupManager();
-    }
+    PowerManager::Init();
+    InputManager::Init();
+    InitSettings();
 
     Log().Info("MAIN") << "ready" << std::endl;
 }
@@ -57,7 +69,7 @@ void loop()
         paint.DrawStringAt(0, 40,  "WiFi-SSID: ", &Font16, 0);
         paint.DrawStringAt(0, 60,  setupMgr->GetWifiSsid(), &Font20, 0);
         paint.DrawStringAt(0, 100, "WiFi-KEY:", &Font16, 0);
-        paint.DrawStringAt(0, 120, setupMgr->GetWifiKey(), &Font24, 0);
+        paint.DrawStringAt(0, 120, settings.GetStringValue(Setting::SETUP_KEY), &Font24, 0);
         if (!epd.IsBusy())
             epd.DisplayPart(paint.GetImage(), false);
 

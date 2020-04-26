@@ -2,7 +2,6 @@
 #include <WiFi.h>
 #include <WiFiClient.h> 
 #include <ESPmDNS.h>
-#include <EEPROM.h>
 #include <soc/sens_reg.h>
 #include "Log.h"
 #include "PinMapping.h"
@@ -18,8 +17,8 @@
 IPAddress apIP(172, 20, 0, 1);
 IPAddress netMsk(255, 255, 255, 0);
 
-SetupManager::SetupManager()
-    : _httpServer(80), _setupCompleted(false)
+SetupManager::SetupManager(SettingsManager& settings)
+    : _httpServer(80), _setupCompleted(false), _settings(settings)
 
 {
     // save some register states that wifi will screw up
@@ -27,23 +26,17 @@ SetupManager::SetupManager()
     reg_b = READ_PERI_REG(SENS_SAR_READ_CTRL2_REG);
     reg_c = READ_PERI_REG(SENS_SAR_MEAS_START2_REG);
 
-    _wifiKey = "aaaaaaaaaaaa";
-    srand(analogRead(POTI_PIN));
-    for (int i = 0; i < _wifiKey.length(); i++)
-    {
-        _wifiKey[i] += (rand() ^ analogRead(POTI_PIN)) % 26;
-    }
-
     // init wifi
     WiFi.setAutoReconnect (false);
     WiFi.persistent(false);
     WiFi.disconnect(); 
     WiFi.setHostname(ESP32_HOST); // Set the DHCP hostname assigned to ESP station.
     WiFi.disconnect();
-    Serial.print(F("Initalize SoftAP "));
-    if (!WiFi.softAP(ESP32_SSID, _wifiKey.c_str()))
+    const char* key = _settings.GetStringValue(Setting::SETUP_KEY);
+    Log().Info("WIFI-AP") << "Initalize Wifi-AP: " << ESP32_SSID << " Key: " << key << std::endl;
+    if (!WiFi.softAP(ESP32_SSID, key))
     {
-        Log().Error("WIFI-AP") << "Failed to start Wifi-AP." << std::endl;
+        Log().Error("WIFI-AP") << "Failed to start WiFi-AP. " << std::endl;
     }
     else
     {
@@ -79,11 +72,6 @@ SetupManager::~SetupManager()
 const char* SetupManager::GetWifiSsid() const
 {
     return ESP32_SSID;
-}
-
-const char* SetupManager::GetWifiKey() const
-{
-     return _wifiKey.c_str(); 
 }
 
 bool SetupManager::SetupCompleted() const
@@ -148,6 +136,8 @@ void SetupManager::HandleSaveRequest()
 
     _httpServer.send (200, "text/html", "" );
     _httpServer.client().stop();
+
+    _settings.SaveToEEPROM();
 
     _setupCompleted = true;
 }
