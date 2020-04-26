@@ -69,7 +69,7 @@ void loop()
         paint.DrawStringAt(0, 40,  "WiFi-SSID: ", &Font16, 0);
         paint.DrawStringAt(0, 60,  setupMgr->GetWifiSsid(), &Font20, 0);
         paint.DrawStringAt(0, 100, "WiFi-KEY:", &Font16, 0);
-        paint.DrawStringAt(0, 120, settings.GetStringValue(Setting::SETUP_KEY), &Font24, 0);
+        paint.DrawStringAt(0, 120, settings.GetStringValue(Setting::SETUP_KEY).c_str(), &Font24, 0);
         if (!epd.IsBusy())
             epd.DisplayPart(paint.GetImage(), false);
 

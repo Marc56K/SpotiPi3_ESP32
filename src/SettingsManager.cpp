@@ -50,6 +50,7 @@ void SettingsManager::LoadFromEEPROM()
 
             std::vector<uint8_t> value(size);
             memcpy(value.data(), ptr, size);
+            ptr += size;
 
             _settings[key] = value;
         }
@@ -92,6 +93,7 @@ void SettingsManager::SaveToEEPROM()
         ptr += sizeof(uint16_t);
 
         memcpy(ptr, it.second.data(), it.second.size());
+        ptr += it.second.size();
     }
 
     *crcPtr = ComputeCrc(EEPROM.getDataPtr() + sizeof(uint32_t), EEPROM_SIZE - sizeof(uint32_t));
@@ -120,14 +122,14 @@ float SettingsManager::GetFloatValue(Setting key)
     return 0;
 }
 
-const char* SettingsManager::GetStringValue(Setting key)
+std::string SettingsManager::GetStringValue(Setting key)
 {
     auto it = _settings.find(key);
     if (it != _settings.end())
     {
-        return (const char*)it->second.data();
+        return std::string((const char*)it->second.data());
     }
-    return nullptr;
+    return "";
 }
 
 void SettingsManager::SetValue(Setting key, float value)
@@ -137,10 +139,10 @@ void SettingsManager::SetValue(Setting key, float value)
     _settings[key] = val;
 }
 
-void SettingsManager::SetValue(Setting key, const char* value)
+void SettingsManager::SetValue(Setting key, const std::string& value)
 {
-    std::vector<uint8_t> val(strlen(value) + 1);
-    memcpy(val.data(), value, val.size() - 1);
+    std::vector<uint8_t> val(value.length() + 1);
+    memcpy(val.data(), value.c_str(), value.length());
     _settings[key] = val;
 }
 

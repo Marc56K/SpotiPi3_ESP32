@@ -32,9 +32,9 @@ SetupManager::SetupManager(SettingsManager& settings)
     WiFi.disconnect(); 
     WiFi.setHostname(ESP32_HOST); // Set the DHCP hostname assigned to ESP station.
     WiFi.disconnect();
-    const char* key = _settings.GetStringValue(Setting::SETUP_KEY);
+    std::string key = _settings.GetStringValue(Setting::SETUP_KEY);
     Log().Info("WIFI-AP") << "Initalize Wifi-AP: " << ESP32_SSID << " Key: " << key << std::endl;
-    if (!WiFi.softAP(ESP32_SSID, key))
+    if (!WiFi.softAP(ESP32_SSID, key.c_str()))
     {
         Log().Error("WIFI-AP") << "Failed to start WiFi-AP. " << std::endl;
     }
@@ -87,8 +87,9 @@ void SetupManager::Update()
 
 void SetupManager::HandleRootRequest()
 {   
+    Log().Info("SETUP") << "HandleRootRequest" << std::endl;
     WiFi.scanDelete();
-    int n = WiFi.scanNetworks(false, false);
+    int numWifis = WiFi.scanNetworks(false, false);
 
     // HTML Header
     _httpServer.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -97,49 +98,46 @@ void SetupManager::HandleRootRequest()
     _httpServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
     // HTML Content
     _httpServer.send (200, "text/html", "");
-    _httpServer.sendContent("<!DOCTYPE HTML><html lang='de'><head><meta charset='UTF-8'><meta name= viewport content='width=device-width, initial-scale=1.0,'>");
+    _httpServer.sendContent("<!DOCTYPE HTML><html lang=\"de\"><head><meta charset=\"UTF-8\"><meta name= viewport content=\"width=device-width, initial-scale=1.0,\">");
     _httpServer.sendContent("<head><title>SpotiPi</title>");
-    _httpServer.sendContent("<link rel='stylesheet' href='bootstrap.min.css'>");
-    _httpServer.sendContent("</head><body style='padding: 5px;'>");
-    _httpServer.sendContent("<form action='/save' method='post'>");
+    //_httpServer.sendContent("<link rel=\"stylesheet\" href=\"bootstrap.min.css\">");
+    _httpServer.sendContent("<style>");
+    _httpServer.sendContent_P(bootstrap_css);
+    _httpServer.sendContent("</style>");
+    _httpServer.sendContent("</head><body style=\"padding: 5px;\">");
+    _httpServer.sendContent("<form action=\"/save\" method=\"post\">");
 
-    _httpServer.sendContent("<div class='form-group'><label for='wifi_ssid'>WiFi-SSID</label><select type='text' class='form-control' id='wifi_ssid' name='wifi_ssid'>");
-    _httpServer.sendContent("<option = \"\"></option>");
-    for (int i = 0; i < n; i++)
-    {
-        String ssid = StringUtils::HtmlEncode(WiFi.SSID(i));
-        _httpServer.sendContent("<option value=\"" + ssid + "\">");
-        _httpServer.sendContent(ssid);
-        _httpServer.sendContent("</option>");
-    }
-    _httpServer.sendContent("</select></div>");
+    _httpServer.sendContent(StringUtils::HtmlSelectBox(SettingName[Setting::WIFI_SSID], "WiFi-SSID", _settings.GetStringValue(Setting::WIFI_SSID), numWifis, [] (uint32_t i) { return WiFi.SSID(i).c_str(); } ).c_str());
+    _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::WIFI_KEY], "WiFi-Password", _settings.GetStringValue(Setting::WIFI_KEY), true).c_str());
 
-    _httpServer.sendContent("<div class='form-group'><label for='wifi_password'>WiFi-Password</label><input type='password' class='form-control' id='wifi_password' name='wifi_password'></div>");
-    _httpServer.sendContent("<button type='submit' class='btn btn-primary'>Save</button>");
+    _httpServer.sendContent("<button type=\"submit\" class=\"btn btn-primary\">Save</button>");
     _httpServer.sendContent("</form>");
     _httpServer.sendContent("</body></html>");
     _httpServer.client().stop(); // Stop is needed because we sent no content length
+
+    Log().Info("SETUP") << "HandleRootRequest done" << std::endl;
 }
 
 void SetupManager::HandleSaveRequest()
 {
-    Log().Info("SAVE") << _httpServer.args() <<  std::endl;
-
-    if (_httpServer.hasArg("wifi_ssid"))
+    Log().Info("SETUP") << "HandleSaveRequest " <<_httpServer.args() << std::endl;
+    for (uint32_t i = 0; i < Setting::NUM_SETTINGS; i++)
     {
-        Log().Info("wifi_ssid") << _httpServer.arg("wifi_ssid").c_str() << std::endl;
+        auto key = SettingName[i];
+        if (_httpServer.hasArg(key))
+        {
+            auto value = _httpServer.arg(key);
+            _settings.SetValue((Setting)i, std::string(value.c_str()));
+        }
     }
-    if (_httpServer.hasArg("wifi_password"))
-    {
-        Log().Info("wifi_password") << _httpServer.arg("wifi_password").c_str() << std::endl;
-    }
-
-    _httpServer.send (200, "text/html", "" );
-    _httpServer.client().stop();
-
     _settings.SaveToEEPROM();
 
+    _httpServer.send (200, "text/html", "configuration completed" );
+    _httpServer.client().stop();
+
     _setupCompleted = true;
+
+    Log().Info("SETUP") << "HandleSaveRequest done" << std::endl;
 }
 
 void SetupManager::HandleCssRequest()
@@ -152,10 +150,14 @@ void SetupManager::HandleCssRequest()
 
 void SetupManager::HandleNotFound()
 {
-    if (!StringUtils::IsIp(_httpServer.hostHeader()) && _httpServer.hostHeader() != (String(ESP32_HOST)+".local"))
+    Log().Info("SETUP") << "HandleNotFound " << _httpServer.hostHeader().c_str() << std::endl;
+    if (!StringUtils::IsIp(_httpServer.hostHeader().c_str()) && _httpServer.hostHeader() != (String(ESP32_HOST)+".local"))
     {
         // Serial.println("Request redirected to captive portal");  
-        _httpServer.sendHeader("Location", String("http://") + StringUtils::ToStringIp(_httpServer.client().localIP()), true);
+        
+        String url = String("http://") + _httpServer.client().localIP().toString();
+        Log().Info("SETUP") << "Request redirected to captive portal: " << url.c_str() << std::endl;
+        _httpServer.sendHeader("Location", url, true);        
         _httpServer.send ( 302, "text/plain", ""); // Empty content inhibits Content-length header so we have to close the socket ourselves.
         _httpServer.client().stop(); // Stop is needed because we sent no content length    
     }

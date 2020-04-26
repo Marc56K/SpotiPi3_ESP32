@@ -1,14 +1,22 @@
 #pragma once
 #include <map>
 #include <vector>
-#include <Arduino.h>
+#include <string>
 
 enum Setting : uint8_t
 {
     SETUP_KEY = 0,
     WIFI_SSID,
     WIFI_KEY,
+    NUM_SETTINGS
 };
+
+static char SettingName[][11] =
+ {
+     "SETUP_KEY",
+     "WIFI_SSID",
+     "WIFI_KEY"
+ };
 
 class SettingsManager
 {
@@ -22,9 +30,9 @@ public:
 
     bool HasValue(Setting key);
     float GetFloatValue(Setting key);
-    const char* GetStringValue(Setting key);
+    std::string GetStringValue(Setting key);
     void SetValue(Setting key, float value);
-    void SetValue(Setting key, const char* value);
+    void SetValue(Setting key, const std::string& value);
 
 private:
     uint32_t ComputeCrc(void* ptr, uint32_t size);
