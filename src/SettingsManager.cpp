@@ -2,6 +2,7 @@
 #include "PinMapping.h"
 #include "Log.h"
 #include <EEPROM.h>
+#include <stdlib.h>
 
 #define EEPROM_SIZE 512
 
@@ -116,7 +117,7 @@ float SettingsManager::GetFloatValue(Setting key)
     {
         if (sizeof(float) == it->second.size())
         {
-            return *((float*)it->second.data());
+            return (float)atof((const char*)it->second.data());
         }
     }
     return 0;
@@ -134,9 +135,9 @@ std::string SettingsManager::GetStringValue(Setting key)
 
 void SettingsManager::SetValue(Setting key, float value)
 {
-    std::vector<uint8_t> val(sizeof(float));
-    memcpy(val.data(), &value, sizeof(float));
-    _settings[key] = val;
+    std::ostringstream ss;
+    ss << value;
+    SetValue(key, ss.str());
 }
 
 void SettingsManager::SetValue(Setting key, const std::string& value)
