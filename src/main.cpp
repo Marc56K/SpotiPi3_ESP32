@@ -83,16 +83,16 @@ void loop()
     }
     else
     {
-        String s = "";
-        while (Serial2.available()) 
+        uint8_t* data = nullptr;
+        int32_t readSize = serialIf.Read(data);
+        if (readSize > 0)
         {
-            s += char(Serial2.read());
+            Log().Info("PI-STATE") << (char*)data << std::endl;
         }
-        if (s != "")
-            Serial.print(s);
 
-        //Serial2.println(s + " World " + String(millis()));
-        serialIf.Write("{ \"Foo\":123, \"Bar\":\"bazz\" }");
+        std::ostringstream json;
+        json << "{ \"Volume\":" << (int)(100 * is.poti + 0.5f) << "}";
+        serialIf.Write(json.str());
         
         float time_now_s = (float)millis() / 1000;
 
