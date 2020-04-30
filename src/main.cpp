@@ -7,9 +7,11 @@
 #include "InputManager.h"
 #include "PowerManager.h"
 #include "SettingsManager.h"
+#include "SerialInterface.h"
 
 SettingsManager settings;
 SetupManager* setupMgr = nullptr;
+SerialInterface serialIf;
 
 unsigned char image[200*200];
 Paint paint(image, 200, 200);
@@ -33,7 +35,7 @@ void InitSettings()
 
 void setup()
 {
-    Serial2.begin(9600);
+    //Serial2.begin(115200, SERIAL_8E1);
 
     Serial.begin(115200);
     Log().Info("MAIN") << "setup" << std::endl;
@@ -89,7 +91,8 @@ void loop()
         if (s != "")
             Serial.print(s);
 
-        Serial2.println(s + " World " + String(millis()));
+        //Serial2.println(s + " World " + String(millis()));
+        serialIf.Write("{ \"Foo\":123, \"Bar\":\"bazz\" }");
         
         float time_now_s = (float)millis() / 1000;
 
