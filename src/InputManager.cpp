@@ -72,7 +72,7 @@ namespace InputManager
         return potiAvg / 4095;
     }
 
-    String GetRfid()
+    std::string GetRfid()
     {
         String content = "";
         mfrc522.PCD_SoftPowerUp();
@@ -87,7 +87,7 @@ namespace InputManager
             content.toUpperCase();
         }
         mfrc522.PCD_SoftPowerDown();
-        return content;
+        return content.c_str();
     }
 
     void Init()

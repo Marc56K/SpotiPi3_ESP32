@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include <string>
 
 namespace InputManager
 {
@@ -7,7 +8,7 @@ namespace InputManager
     {
         uint32_t buttons[4];
         float poti;
-        String rfId;
+        std::string rfId;
     };
 
     void Init();

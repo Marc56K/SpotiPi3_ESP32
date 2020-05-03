@@ -91,7 +91,13 @@ void loop()
         }
 
         std::ostringstream json;
-        json << "{ \"Volume\":" << (int)(100 * is.poti + 0.5f) << "}";
+        json << "{" << std::endl;
+        json << "\"volume\": " << (int)(100 * is.poti + 0.5f) << "," << std::endl;
+        json << "\"playlist\": \"" << is.rfId << "\"," << std::endl;
+        json << "\"skipTracks\": " << (-(int32_t)is.buttons[1] + is.buttons[3]) << "," << std::endl;
+        json << "\"togglePlayPause\": " << (is.buttons[2] % 2) << "," << std::endl;
+        json << "\"shutdown\": " << (is.buttons[0] % 2) << std::endl;
+        json << "}";
         serialIf.Write(json.str());
         
         float time_now_s = (float)millis() / 1000;
@@ -103,7 +109,7 @@ void loop()
         paint.DrawStringAt(0, 40, (String("BAT: ") + String(ps.batteryVoltage)).c_str(), &Font24, 0);
         paint.DrawStringAt(0, 60, (String("FULL: ") + String(ps.batteryIsFull)).c_str(), &Font24, 0);
         paint.DrawStringAt(0, 80, (String("USB: ") + String(ps.isOnUsb)).c_str(), &Font24, 0);
-        paint.DrawStringAt(0, 100, (String("RFID: ") + is.rfId).c_str(), &Font20, 0);
+        paint.DrawStringAt(0, 100, (String("RFID: ") + is.rfId.c_str()).c_str(), &Font20, 0);
         paint.DrawStringAt(0, 120, (String("POTI: ") + is.poti).c_str(), &Font24, 0);
 
         if (is.buttons[0] + is.buttons[1] + is.buttons[2] + is.buttons[3] > 0)
