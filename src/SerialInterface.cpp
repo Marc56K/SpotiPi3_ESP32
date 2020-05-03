@@ -6,7 +6,6 @@
 const uint8_t STX = 2; // ASCII: Start of Text
 const uint8_t ETX = 3; // ASCII: End of Text
 const int32_t headerSize = sizeof(int32_t);
-const int32_t encodedHeaderLength = Base64.encodedLength(headerSize);
 
 SerialInterface::SerialInterface()
     : _readStarted(false), _readEncodedDataSize(-1)
@@ -21,8 +20,9 @@ void SerialInterface::Write(const std::string& msg)
 
 void SerialInterface::Write(const void* data, const uint16_t size)
 {
-    int32_t encodedDataLength = Base64.encodedLength(size);
-    int32_t bufferSize = encodedHeaderLength + encodedDataLength;
+    const int32_t encodedHeaderLength = Base64.encodedLength(headerSize);
+    const int32_t encodedDataLength = Base64.encodedLength(size);
+    const int32_t bufferSize = encodedHeaderLength + encodedDataLength + 1; // Base64.encode needs one additional byte for null termination
 
     if (_buffer.size() < bufferSize)
     {
@@ -39,6 +39,7 @@ void SerialInterface::Write(const void* data, const uint16_t size)
 
 int32_t SerialInterface::Read(uint8_t*& data)
 {
+    const int32_t encodedHeaderLength = Base64.encodedLength(headerSize);
     while (Serial2.available()) 
     {
         auto b = (uint8_t)Serial2.read();
@@ -55,7 +56,9 @@ int32_t SerialInterface::Read(uint8_t*& data)
                 _readEncodedBuffer.push_back(b);
                 if (_readEncodedBuffer.size() == encodedHeaderLength)
                 {
-                    Base64.decode((char*)&_readEncodedDataSize, (char*)_readEncodedBuffer.data(), encodedHeaderLength);
+                    char decodeBuffer[sizeof(int32_t) + 1]; // Base64.decode needs one additional byte for null termination
+                    Base64.decode(decodeBuffer, (char*)_readEncodedBuffer.data(), encodedHeaderLength);
+                    memcpy(&_readEncodedDataSize, decodeBuffer, sizeof(int32_t));
                     _readEncodedBuffer.resize(0);
                     //Log().Info("SERIAL-IN") << "Received " << _readEncodedDataSize << " bytes" << std::endl;
                 }
@@ -69,8 +72,7 @@ int32_t SerialInterface::Read(uint8_t*& data)
                 if (_readEncodedBuffer.size() == _readEncodedDataSize)
                 {
                     int32_t decodeDataLength = Base64.decodedLength((char*)_readEncodedBuffer.data(), _readEncodedDataSize);
-                    _readDecodedBuffer.resize(decodeDataLength + 1);
-                    _readDecodedBuffer[decodeDataLength] = 0;
+                    _readDecodedBuffer.resize(decodeDataLength + 1); // Base64.decode needs one additional byte for null termination
                     Base64.decode((char*)_readDecodedBuffer.data(), (char*)_readEncodedBuffer.data(), _readEncodedDataSize);
                     data =_readDecodedBuffer.data(); 
                     return decodeDataLength;
