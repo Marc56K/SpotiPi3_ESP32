@@ -72,22 +72,21 @@ namespace InputManager
         return potiAvg / 4095;
     }
 
+    std::string _lastRfid = "";
     std::string GetRfid()
     {
-        String content = "";
-        mfrc522.PCD_SoftPowerUp();
-        mfrc522.PCD_Init();
         if(mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial())
         {
+            String content = "";
             for (byte i = 0; i < mfrc522.uid.size; i++) 
             {
                 content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? "0" : ""));
                 content.concat(String(mfrc522.uid.uidByte[i], HEX));
             }
             content.toUpperCase();
+            _lastRfid = content.c_str();
         }
-        mfrc522.PCD_SoftPowerDown();
-        return content.c_str();
+        return _lastRfid;
     }
 
     void Init()
@@ -104,7 +103,6 @@ namespace InputManager
         pinMode(POTI_PIN, INPUT);
 
         mfrc522.PCD_Init();
-        mfrc522.PCD_SoftPowerDown();
     }
 
     InputState GetInputState()

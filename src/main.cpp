@@ -54,13 +54,14 @@ void setup()
     Log().Info("MAIN") << "ready" << std::endl;
 }
 
-
 void loop()
 {
     //Log().Info("MAIN") << "update" << std::endl;
 
     auto is = InputManager::GetInputState();
     auto ps = PowerManager::GetPowerState();
+
+    Log().Info("INPUT") << is.buttons[1] << std::endl;
 
     if (setupMgr != nullptr)
     {
@@ -94,7 +95,7 @@ void loop()
         json << "{" << std::endl;
         json << "\"volume\": " << (int)(100 * is.poti + 0.5f) << "," << std::endl;
         json << "\"playlist\": \"" << is.rfId << "\"," << std::endl;
-        json << "\"skipTracks\": " << (-(int32_t)is.buttons[1] + is.buttons[3]) << "," << std::endl;
+        json << "\"skipTracks\": " << (-((int32_t)is.buttons[1]) + ((int32_t)is.buttons[3])) << "," << std::endl;
         json << "\"togglePlayPause\": " << (is.buttons[2] % 2) << "," << std::endl;
         json << "\"shutdown\": " << (is.buttons[0] % 2) << std::endl;
         json << "}";
@@ -112,12 +113,12 @@ void loop()
         paint.DrawStringAt(0, 100, (String("RFID: ") + is.rfId.c_str()).c_str(), &Font20, 0);
         paint.DrawStringAt(0, 120, (String("POTI: ") + is.poti).c_str(), &Font24, 0);
 
-        if (is.buttons[0] + is.buttons[1] + is.buttons[2] + is.buttons[3] > 0)
-            epd.WaitUntilIdle();
+        //if (is.buttons[0] + is.buttons[1] + is.buttons[2] + is.buttons[3] > 0)
+            //epd.WaitUntilIdle();
 
         if (!epd.IsBusy())
             epd.DisplayPart(paint.GetImage(), false);
-
+/*
         if (is.buttons[0] > 0)
         {
             digitalWrite(POWER_OFF_PIN, HIGH);
@@ -137,5 +138,6 @@ void loop()
         {
             ESP.restart();
         }
+        */
     }
 }
