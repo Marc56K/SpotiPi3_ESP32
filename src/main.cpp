@@ -61,8 +61,6 @@ void loop()
     auto is = InputManager::GetInputState();
     auto ps = PowerManager::GetPowerState();
 
-    Log().Info("INPUT") << is.buttons[1] << std::endl;
-
     if (setupMgr != nullptr)
     {
         setupMgr->Update();
@@ -85,33 +83,58 @@ void loop()
     else
     {
         uint8_t* data = nullptr;
+        auto start = millis();
         int32_t readSize = serialIf.Read(data);
+        auto end = millis();
+        auto delta = end - start;
+
         if (readSize > 0)
         {
-            Log().Info("PI-STATE") << (char*)data << std::endl;
+            Log().Info("PI-STATE") << delta << " ms : " << (char*)data << std::endl;
+            serialIf.WriteKeyValue("playlist",  is.rfId);
         }
 
-        std::ostringstream json;
-        json << "{" << std::endl;
-        json << "\"volume\": " << (int)(100 * is.poti + 0.5f) << "," << std::endl;
-        json << "\"playlist\": \"" << is.rfId << "\"," << std::endl;
-        json << "\"skipTracks\": " << (-((int32_t)is.buttons[1]) + ((int32_t)is.buttons[3])) << "," << std::endl;
-        json << "\"togglePlayPause\": " << (is.buttons[2] % 2) << "," << std::endl;
-        json << "\"shutdown\": " << (is.buttons[0] % 2) << std::endl;
-        json << "}";
-        serialIf.Write(json.str());
-        
-        float time_now_s = (float)millis() / 1000;
+        if (readSize > 0 || abs(is.potiDelta) > 1)
+        {
+            serialIf.WriteKeyValue("volume",  is.potiValue);
+        }
+
+        if (is.buttons[1] > 0)
+        {
+            if (is.buttons[1] < 3)
+                serialIf.WriteKeyValue("skipPrevious", is.buttons[1]);
+            else
+                serialIf.WriteKeyValue("skipToStart", 1);
+        }
+
+        if (is.buttons[3] > 0)
+        {
+            if (is.buttons[3] < 3)
+                serialIf.WriteKeyValue("skipNext", is.buttons[3]);
+            else
+                serialIf.WriteKeyValue("skipNext", 10);
+        }
+
+        if (is.buttons[2] % 2 == 1)
+        {
+            serialIf.WriteKeyValue("togglePlayPause", 1);
+        }
+
+        if (is.buttons[0] > 0)
+        {
+            serialIf.WriteKeyValue("shutdown", 1);
+        }
+
+        float now = (float)millis() / 1000;
 
         paint.Clear(1);
-        paint.DrawStringAt(0, 0, (String(time_now_s)).c_str(), &Font24, 0);
-        
+        paint.DrawStringAt(0, 0, (String(now)).c_str(), &Font24, 0);        
         paint.DrawStringAt(0, 20, (String("BTN: ") + String(is.buttons[0]) + String(is.buttons[1]) + String(is.buttons[2]) + String(is.buttons[3])).c_str(), &Font24, 0);
         paint.DrawStringAt(0, 40, (String("BAT: ") + String(ps.batteryVoltage)).c_str(), &Font24, 0);
         paint.DrawStringAt(0, 60, (String("FULL: ") + String(ps.batteryIsFull)).c_str(), &Font24, 0);
         paint.DrawStringAt(0, 80, (String("USB: ") + String(ps.isOnUsb)).c_str(), &Font24, 0);
         paint.DrawStringAt(0, 100, (String("RFID: ") + is.rfId.c_str()).c_str(), &Font20, 0);
-        paint.DrawStringAt(0, 120, (String("POTI: ") + is.poti).c_str(), &Font24, 0);
+        paint.DrawStringAt(0, 120, (String("POTI: ") + is.potiValue).c_str(), &Font24, 0);
 
         //if (is.buttons[0] + is.buttons[1] + is.buttons[2] + is.buttons[3] > 0)
             //epd.WaitUntilIdle();

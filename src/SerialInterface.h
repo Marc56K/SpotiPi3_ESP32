@@ -6,6 +6,8 @@ class SerialInterface
 {
 public:
     SerialInterface();
+    void WriteKeyValue(const std::string& key, const std::string& value);
+    void WriteKeyValue(const std::string& key, const int32_t value);
     void Write(const std::string& msg);
     void Write(const void* data, const uint16_t size);
     int32_t Read(uint8_t*& data);

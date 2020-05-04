@@ -7,8 +7,14 @@ namespace InputManager
     struct InputState
     {
         uint32_t buttons[4];
-        float poti;
+        uint32_t potiValue;
+        int32_t potiDelta;
         std::string rfId;
+
+        bool AnyButton()
+        {
+            return buttons[0] + buttons[1] + buttons[2] + buttons[3] > 0;
+        }
     };
 
     void Init();

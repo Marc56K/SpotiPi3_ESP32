@@ -11,6 +11,21 @@ SerialInterface::SerialInterface()
     : _readStarted(false), _readEncodedDataSize(-1)
 {
     Serial2.begin(115200, SERIAL_8E1);
+    Serial2.setRxBufferSize(1024);
+}
+
+void SerialInterface::WriteKeyValue(const std::string& key, const std::string& value)
+{
+    std::ostringstream json;
+    json << "{ \"" << key << "\": \"" << value << "\" }";
+    Write(json.str());
+}
+
+void SerialInterface::WriteKeyValue(const std::string& key, const int32_t value)
+{
+    std::ostringstream json;
+    json << "{ \"" << key << "\": " << value << " }";
+    Write(json.str());
 }
 
 void SerialInterface::Write(const std::string& msg)
@@ -46,6 +61,11 @@ int32_t SerialInterface::Read(uint8_t*& data)
         if (b == STX || b == ETX)
         {
             _readStarted = (b == STX);
+            if (_readStarted && _readEncodedDataSize > 0 && _readEncodedDataSize > _readEncodedBuffer.size())
+            {
+                Log().Error("SERIAL-IN") << "Only got " << _readEncodedBuffer.size() << " bytes of the " << _readEncodedDataSize  << " bytes of last message" << std::endl;
+            }
+
             _readEncodedBuffer.resize(0);
             _readEncodedDataSize = -1;
         }
@@ -60,7 +80,7 @@ int32_t SerialInterface::Read(uint8_t*& data)
                     Base64.decode(decodeBuffer, (char*)_readEncodedBuffer.data(), encodedHeaderLength);
                     memcpy(&_readEncodedDataSize, decodeBuffer, sizeof(int32_t));
                     _readEncodedBuffer.resize(0);
-                    //Log().Info("SERIAL-IN") << "Received " << _readEncodedDataSize << " bytes" << std::endl;
+                    //Log().Info("SERIAL-IN") << "Reading " << _readEncodedDataSize << " bytes" << std::endl;
                 }
             }
             else
@@ -74,7 +94,8 @@ int32_t SerialInterface::Read(uint8_t*& data)
                     int32_t decodeDataLength = Base64.decodedLength((char*)_readEncodedBuffer.data(), _readEncodedDataSize);
                     _readDecodedBuffer.resize(decodeDataLength + 1); // Base64.decode needs one additional byte for null termination
                     Base64.decode((char*)_readDecodedBuffer.data(), (char*)_readEncodedBuffer.data(), _readEncodedDataSize);
-                    data =_readDecodedBuffer.data(); 
+                    data =_readDecodedBuffer.data();
+                    _readStarted = false;
                     return decodeDataLength;
                 }                
             }            

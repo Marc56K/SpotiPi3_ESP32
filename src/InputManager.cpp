@@ -62,14 +62,27 @@ namespace InputManager
     void IRAM_ATTR HandleButton3() { buttonHandler[3].HandleButton(digitalRead(BT3_PIN)); }
 
     float potiAvg = -1;
-    float GetPoti()
+    int32_t oldPotiVal = -1;
+    void GetPoti(uint32_t& value, int32_t& delta)
     {
-        float value = min(4095.0f, (float)analogRead(POTI_PIN));
-        if (potiAvg < 0)
-            potiAvg = value;
-        else
-            potiAvg = 0.8 * potiAvg + 0.2 * value;
-        return potiAvg / 4095;
+        for (int i = 0; i < 20; i++)
+        {
+            float value = min(4095.0f, (float)analogRead(POTI_PIN));
+            if (potiAvg < 0)
+            {
+                potiAvg = value;
+            }
+            else
+            {
+                potiAvg = 0.95 * potiAvg + 0.05 * value;
+            }
+        }
+        int32_t newVal = (int32_t)(100 * potiAvg / 4095 + 0.5f);
+        value = (uint32_t)newVal;
+        delta = 0;
+        if (oldPotiVal >= 0)
+            delta = newVal - oldPotiVal;
+        oldPotiVal = newVal;
     }
 
     std::string _lastRfid = "";
@@ -112,7 +125,7 @@ namespace InputManager
         {
             result.buttons[i] = buttonHandler[i].ComputeNumButtonPresses();
         }
-        result.poti = GetPoti();
+        GetPoti(result.potiValue, result.potiDelta);
         result.rfId = GetRfid();
         return result;
     }
