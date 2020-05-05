@@ -93,6 +93,10 @@ void loop()
             Log().Info("PI-STATE") << delta << " ms : " << (char*)data << std::endl;
             serialIf.WriteKeyValue("wifiSsid", settings.GetStringValue(Setting::WIFI_SSID));
             serialIf.WriteKeyValue("wifiKey", settings.GetStringValue(Setting::WIFI_KEY));
+            serialIf.WriteKeyValue("spotifyUser", settings.GetStringValue(Setting::SPOTIFY_USER));
+            serialIf.WriteKeyValue("spotifyPassword", settings.GetStringValue(Setting::SPOTIFY_PASSWORD));
+            serialIf.WriteKeyValue("spotifyClientId", settings.GetStringValue(Setting::SPOTIFY_CLIENT_ID));
+            serialIf.WriteKeyValue("spotifyClientSecret", settings.GetStringValue(Setting::SPOTIFY_CLIENT_SECRET));
             serialIf.WriteKeyValue("playlist",  is.rfId);
         }
 

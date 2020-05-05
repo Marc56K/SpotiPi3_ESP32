@@ -8,14 +8,22 @@ enum Setting : uint8_t
     SETUP_KEY = 0,
     WIFI_SSID,
     WIFI_KEY,
+    SPOTIFY_USER,
+    SPOTIFY_PASSWORD,
+    SPOTIFY_CLIENT_ID,
+    SPOTIFY_CLIENT_SECRET,
     NUM_SETTINGS
 };
 
-static char SettingName[][11] =
+static char SettingName[][32] =
  {
-     "SETUP_KEY",
-     "WIFI_SSID",
-     "WIFI_KEY"
+    "SETUP_KEY",
+    "WIFI_SSID",
+    "WIFI_KEY",
+    "SPOTIFY_USER",
+    "SPOTIFY_PASSWORD",
+    "SPOTIFY_CLIENT_ID",
+    "SPOTIFY_CLIENT_SECRET"
  };
 
 class SettingsManager

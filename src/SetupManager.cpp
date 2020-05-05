@@ -110,6 +110,11 @@ void SetupManager::HandleRootRequest()
     _httpServer.sendContent(StringUtils::HtmlSelectBox(SettingName[Setting::WIFI_SSID], "WiFi-SSID", _settings.GetStringValue(Setting::WIFI_SSID), numWifis, [] (uint32_t i) { return WiFi.SSID(i).c_str(); } ).c_str());
     _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::WIFI_KEY], "WiFi-Password", _settings.GetStringValue(Setting::WIFI_KEY), true).c_str());
 
+    _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::SPOTIFY_USER], "Spotify-Username", _settings.GetStringValue(Setting::SPOTIFY_USER), false).c_str());
+    _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::SPOTIFY_PASSWORD], "Spotify-Password", _settings.GetStringValue(Setting::SPOTIFY_PASSWORD), true).c_str());
+    _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::SPOTIFY_CLIENT_ID], "Spotify-Client-Id", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_ID), false).c_str());
+    _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::SPOTIFY_CLIENT_SECRET], "Spotify-Client-Secret", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_SECRET), false).c_str());
+
     _httpServer.sendContent("<button type=\"submit\" class=\"btn btn-primary\">Save</button>");
     _httpServer.sendContent("</form>");
     _httpServer.sendContent("</body></html>");
