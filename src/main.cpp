@@ -91,6 +91,8 @@ void loop()
         if (readSize > 0)
         {
             Log().Info("PI-STATE") << delta << " ms : " << (char*)data << std::endl;
+            serialIf.WriteKeyValue("wifiSsid", settings.GetStringValue(Setting::WIFI_SSID));
+            serialIf.WriteKeyValue("wifiKey", settings.GetStringValue(Setting::WIFI_KEY));
             serialIf.WriteKeyValue("playlist",  is.rfId);
         }
 
