@@ -16,21 +16,26 @@ SerialInterface::SerialInterface()
 
 void SerialInterface::WriteKeyValue(const std::string& key, const std::string& value)
 {
-    std::ostringstream json;
-    json << "{ \"" << key << "\": \"" << value << "\" }";
-    Write(json.str());
+    _jsonOutDoc.clear();
+    _jsonOutDoc[key] = value;
+    std::string json;
+    serializeJson(_jsonOutDoc, json);
+    Write(json);
 }
 
 void SerialInterface::WriteKeyValue(const std::string& key, const int32_t value)
 {
-    std::ostringstream json;
-    json << "{ \"" << key << "\": " << value << " }";
-    Write(json.str());
+    _jsonOutDoc.clear();
+    _jsonOutDoc[key] = value;
+    std::string json;
+    serializeJson(_jsonOutDoc, json);
+    Write(json);
 }
 
 void SerialInterface::Write(const std::string& msg)
 {
     Write(msg.c_str(), msg.length());
+    Log().Info("SERIAL-OUT") << msg << std::endl;
 }
 
 void SerialInterface::Write(const void* data, const uint16_t size)
@@ -94,6 +99,7 @@ int32_t SerialInterface::Read(uint8_t*& data)
                     int32_t decodeDataLength = Base64.decodedLength((char*)_readEncodedBuffer.data(), _readEncodedDataSize);
                     _readDecodedBuffer.resize(decodeDataLength + 1); // Base64.decode needs one additional byte for null termination
                     Base64.decode((char*)_readDecodedBuffer.data(), (char*)_readEncodedBuffer.data(), _readEncodedDataSize);
+                    _readDecodedBuffer[decodeDataLength] = 0;
                     data =_readDecodedBuffer.data();
                     _readStarted = false;
                     return decodeDataLength;
@@ -102,4 +108,19 @@ int32_t SerialInterface::Read(uint8_t*& data)
         }
     }
     return 0;
+}
+
+StaticJsonDocument<1024>& SerialInterface::Read()
+{
+    _jsonInDoc.clear();
+
+    uint8_t* data = nullptr;
+    int32_t readSize = Read(data);
+    if (readSize > 0)
+    {
+        Log().Info("SERIAL-IN") << (char*)data << std::endl;
+        deserializeJson(_jsonInDoc, (char*)data);
+    }
+
+    return _jsonInDoc;
 }

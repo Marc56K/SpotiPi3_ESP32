@@ -82,15 +82,10 @@ void loop()
     }
     else
     {
-        uint8_t* data = nullptr;
-        auto start = millis();
-        int32_t readSize = serialIf.Read(data);
-        auto end = millis();
-        auto delta = end - start;
+        auto json = serialIf.Read();
 
-        if (readSize > 0)
+        if (json.size() > 0)
         {
-            Log().Info("PI-STATE") << delta << " ms : " << (char*)data << std::endl;
             serialIf.WriteKeyValue("wifiSsid", settings.GetStringValue(Setting::WIFI_SSID));
             serialIf.WriteKeyValue("wifiKey", settings.GetStringValue(Setting::WIFI_KEY));
             serialIf.WriteKeyValue("spotifyUser", settings.GetStringValue(Setting::SPOTIFY_USER));
@@ -100,7 +95,15 @@ void loop()
             serialIf.WriteKeyValue("playlist",  is.rfId);
         }
 
-        if (readSize > 0 || abs(is.potiDelta) > 1)
+        if (json.size() > 0)
+        {
+            bool online = json["online"].as<bool>();
+            Log().Info("PI-STATE") << "Online: " << online << std::endl;
+            int tracks = json["tracks"].as<int>();
+            Log().Info("PI-STATE") << "Tracks: " << tracks << std::endl;         
+        }
+
+        if (json.size() > 0 || abs(is.potiDelta) > 1)
         {
             serialIf.WriteKeyValue("volume",  is.potiValue);
         }
