@@ -1380,6 +1380,7 @@ sFONT Font12 = {
   Font12_Table,
   7, /* Width */
   12, /* Height */
+  0,  /* FontType */
 };
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

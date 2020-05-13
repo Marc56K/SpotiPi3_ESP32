@@ -144,11 +144,17 @@ void Paint::DrawPixel(int x, int y, int colored) {
  */
 void Paint::DrawCharAt(int x, int y, char ascii_char, sFONT* font, int colored) {
     int i, j;
-    if (ascii_char - ' ' > 94)
+
+    if (font->FontType == 0)
     {
-        ascii_char = '?';
+        if (ascii_char - ' ' > 94)
+        {
+            ascii_char = '?';
+        }
+        ascii_char -= ' ';
     }
-    unsigned int char_offset = (ascii_char - ' ') * font->Height * (font->Width / 8 + (font->Width % 8 ? 1 : 0));
+
+    unsigned int char_offset = ascii_char * font->Height * (font->Width / 8 + (font->Width % 8 ? 1 : 0));
     const unsigned char* ptr = &font->table[char_offset];
 
     for (j = 0; j < font->Height; j++) {

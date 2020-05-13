@@ -56,6 +56,7 @@ typedef struct _tFont
   const uint8_t *table;
   uint16_t Width;
   uint16_t Height;
+  uint8_t FontType; // 0: ASCII 1: ANSI 
   
 } sFONT;
 
@@ -64,6 +65,8 @@ extern sFONT Font20;
 extern sFONT Font16;
 extern sFONT Font12;
 extern sFONT Font8;
+extern sFONT Consolas20;
+extern sFONT Consolas24;
 
 #ifdef __cplusplus
 }
