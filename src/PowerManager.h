@@ -1,16 +1,16 @@
 #pragma once
 #include <Arduino.h>
 
+struct PowerState
+{
+    bool isOnUsb;
+    bool isCharging;
+    bool batteryIsFull;
+    float batteryVoltage;
+};
+
 namespace PowerManager
 {
-    struct PowerState
-    {
-        bool isOnUsb;
-        bool isCharging;
-        bool batteryIsFull;
-        float batteryVoltage;
-    };
-
     void Init();
     PowerState GetPowerState();
 };
