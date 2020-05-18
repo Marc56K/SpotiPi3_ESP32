@@ -326,6 +326,31 @@ void Paint::DrawFilledCircle(int x, int y, int radius, int colored) {
     } while(x_pos <= 0);
 }
 
+void Paint::DrawImage(int x, int y, sIMAGE* img)
+{
+    int i, j;
+    const unsigned char* ptr = img->Data;
+    for (j = 0; j < img->Height; j++)
+    {
+        for (i = 0; i < img->Width; i++)
+        {
+            const unsigned char val = (pgm_read_byte(ptr) >> (6 - ((2 * i) % 8))) & 3;
+            if (val != 0)
+            {
+                DrawPixel(x + i, y + j, val - 1);
+            }
+            if ((2 * i) % 8 == 6)
+            {
+                ptr++;
+            }
+        }
+        if (img->Width % 4 != 0)
+        {
+            ptr++;
+        }
+    }
+}
+
 /* END OF FILE */
 
 
