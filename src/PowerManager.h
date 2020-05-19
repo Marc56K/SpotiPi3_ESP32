@@ -7,6 +7,8 @@ struct PowerState
     bool isCharging;
     bool batteryIsFull;
     float batteryVoltage;
+    int batteryLevel;
+    bool sufficientPower;
 };
 
 namespace PowerManager

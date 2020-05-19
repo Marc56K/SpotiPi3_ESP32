@@ -47,6 +47,11 @@ bool Raspi::IsBusy()
         return true;
     }
 
+    if (!_info.mopidyStarted)
+    {
+        return true;
+    }
+
     unsigned long delta = 0;
     auto now = millis();
     if (now >= _lastHeartbeat)
@@ -61,6 +66,11 @@ bool Raspi::IsBusy()
         delta = t + now;
     }
     return delta > 2000;
+}
+
+SpotiPiInfo& Raspi::Info()
+{
+    return _info;
 }
 
 SerialInterface& Raspi::Serial()
@@ -82,7 +92,6 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
 {
     auto json = _serial.Read();
     bool jsonReceived = json.size() > 0;
-    bool sufficientPower = ps.isOnUsb || ps.batteryVoltage > 3.3;
 
     if (jsonReceived)
     {
@@ -91,7 +100,7 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
 
     if (_state == RaspiState::ShuttingDown)
     {
-        if (is.buttons[0] > 0)
+        if (is.buttons[0] > 0 && ps.sufficientPower)
         {
             _restartDelay = GetTimeInCurrentState();
             _restartDelay = _restartDelay < SHUTDOWN_DURATION ? (SHUTDOWN_DURATION - _restartDelay) : 0;
@@ -106,21 +115,28 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
 
     if (_state == RaspiState::Shutdown)
     {
-        if (is.buttons[0] > 0)
+        if (is.buttons[0] > 0 && ps.sufficientPower)
         {
             _restartDelay = 0;
             SetState(RaspiState::Restart);
         }
     }
 
-    if (_state == RaspiState::Restart && sufficientPower)
+    if (_state == RaspiState::Restart)
     {
         if (GetTimeInCurrentState() >= _restartDelay)
         {
             digitalWrite(PI_POWER_PIN, LOW);
-            delay(10);
-            digitalWrite(PI_POWER_PIN, HIGH);
-            SetState(RaspiState::Starting);
+            if (ps.sufficientPower)
+            {
+                delay(10);
+                digitalWrite(PI_POWER_PIN, HIGH);
+                SetState(RaspiState::Starting);
+            }
+            else
+            {
+                SetState(RaspiState::Shutdown);
+            }
         }
     }
 
@@ -143,32 +159,50 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
         if (jsonReceived)
         {
             if (json.containsKey("state") && json["state"] == "play")
-            {
                 SetState(RaspiState::Playing);
-            }
             else
-            {
                 SetState(RaspiState::Idle);
+
+            _info.Clear();
+
+            _info.mopidyStarted = !(json.containsKey("error") && json["error"] == "Not connected");
+
+            if (json.containsKey("online"))
+                _info.online = json["online"].as<bool>();
+
+            if (json.containsKey("tracks"))
+                _info.tracks = json["tracks"].as<int>();
+
+            if (json.containsKey("track"))
+                _info.track = json["track"].as<int>();
+
+            if (json.containsKey("time"))
+                _info.time = json["time"].as<float>();
+
+            if (json.containsKey("state"))
+                _info.state = json["state"].as<char*>();
+
+            if (json.containsKey("playlistId"))
+                _info.playlistId = json["playlistId"].as<char*>();
+
+            if (json.containsKey("playlistName"))
+                _info.playlistName = StringUtils::Utf8ToLatin1String(json["playlistName"].as<char*>());
+
+            if (json.containsKey("album"))
+                _info.album = StringUtils::Utf8ToLatin1String(json["album"].as<char*>());
+
+            if (json.containsKey("artist"))
+                _info.artist = StringUtils::Utf8ToLatin1String(json["artist"].as<char*>());
+
+            if (json.containsKey("title"))
+                _info.title = StringUtils::Utf8ToLatin1String(json["title"].as<char*>());
+
+            if (_info.playlistId != "" && _info.playlistName != "")
+            {
+                _info.playlist = StringUtils::Trim(StringUtils::Replace(_info.playlistName, _info.playlistId, ""));
             }
 
             _serial.WriteKeyValue("playlist", is.rfId);
-
-            /*
-            bool online = json["online"].as<bool>();
-            Log().Info("PI-STATE") << "Online: " << online << std::endl;
-            int tracks = json["tracks"].as<int>();
-            Log().Info("PI-STATE") << "Tracks: " << tracks << std::endl;
-            
-            if (json.containsKey("artist"))
-            {
-                artist = json["artist"].as<char*>();
-                artist = StringUtils::Utf8ToLatin1String(artist);
-                Log().Info("PI-STATE") << "Artist: " << artist << std::endl;
-            }
-            else
-            {
-                artist = "";
-            }*/
         }
 
         if (jsonReceived || abs(is.potiDelta) > 1)
@@ -197,12 +231,17 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
             _serial.WriteKeyValue("togglePlayPause", 1);
         }
 
-        if (is.buttons[0] > 0 || (_state == RaspiState::Idle && GetTimeInCurrentState() > AUTO_SHUTDOWN_DELAY))
+        if (is.buttons[0] > 0 || !ps.sufficientPower || (_state == RaspiState::Idle && GetTimeInCurrentState() > AUTO_SHUTDOWN_DELAY))
         {
             _serial.WriteKeyValue("shutdown", 1);
             SetState(RaspiState::ShuttingDown);
         }
     }
+    else
+    {
+        _info.Clear();
+    }
+    
 
     return _state;
 }

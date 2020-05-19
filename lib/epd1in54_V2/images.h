@@ -28,6 +28,13 @@ extern sIMAGE IMG_power_in;
 extern sIMAGE IMG_prev_track;
 extern sIMAGE IMG_standby;
 extern sIMAGE IMG_volume;
+extern sIMAGE IMG_power_off;
+extern sIMAGE IMG_spinner_0;
+extern sIMAGE IMG_spinner_1;
+extern sIMAGE IMG_spinner_2;
+extern sIMAGE IMG_spinner_3;
+extern sIMAGE IMG_spinner_4;
+extern sIMAGE IMG_spinner_5;
 
 #ifdef __cplusplus
 }

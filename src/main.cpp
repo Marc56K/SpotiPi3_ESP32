@@ -1,19 +1,13 @@
 #include "PinMapping.h"
 #include <SPI.h>
-#include <epd1in54_V2.h>
-#include <epdpaint.h>
 #include "SetupManager.h"
 #include "Raspi.h"
+#include "Display.h"
 
-SettingsManager settings;
+Display display;
 SetupManager* setupMgr = nullptr;
+SettingsManager settings;
 Raspi raspi(settings);
-
-unsigned char image[200*200];
-Paint paint(image, 200, 200);
-Epd epd;
-
-std::string artist = "";
 
 void InitSettings()
 {
@@ -36,15 +30,7 @@ void setup()
     Serial.begin(115200);
     Log().Info("MAIN") << "setup" << std::endl;
 
-    Log().Info("MAIN") << "e-Paper init" << std::endl;
-    if (epd.Init() != 0)
-      Log().Error("MAIN") << "e-Paper init failed" << std::endl;
-
-    paint.Clear(0);
-    epd.DisplayPart(paint.GetImage(), true);
-    paint.Clear(1);
-    epd.DisplayPart(paint.GetImage(), false);
-
+    display.Init();
     PowerManager::Init();
     InputManager::Init();
     InitSettings();
@@ -61,14 +47,9 @@ void loop()
     {
         setupMgr->Update();
 
-        paint.Clear(1);
-        paint.DrawStringAt(0, 0, "  Setup Mode", &Font20, 0);
-        paint.DrawStringAt(0, 40,  "WiFi-SSID: ", &Font16, 0);
-        paint.DrawStringAt(0, 60,  setupMgr->GetWifiSsid(), &Font20, 0);
-        paint.DrawStringAt(0, 100, "WiFi-KEY:", &Font16, 0);
-        paint.DrawStringAt(0, 120, settings.GetStringValue(Setting::SETUP_KEY).c_str(), &Font24, 0);
-        if (!epd.IsBusy())
-            epd.DisplayPart(paint.GetImage(), false);
+        display.Clear();
+        display.RenderSetupScreen(setupMgr->GetWifiSsid(), settings.GetStringValue(Setting::SETUP_KEY));
+        display.Present();
 
         if (is.buttons[0] > 0 || setupMgr->SetupCompleted())
         {
@@ -78,36 +59,82 @@ void loop()
     }
     else
     {
+        SpotiPiInfo& info = raspi.Info();
         auto raspiState = raspi.Update(ps, is);
 
-        paint.Clear(1);
         if (raspiState == RaspiState::ShuttingDown)
         {
-            paint.DrawStringAt(0, 0, "Shutting down ...", &Font20, 0);
-            if (!epd.IsBusy())
-                epd.DisplayPart(paint.GetImage(), false);
+            display.Clear();
+            display.RenderBusyAnimation(72, 72);
+            display.Present(false);
         }
         else if (raspiState == RaspiState::Shutdown || raspiState == RaspiState::StartTimeout)
         {
-            epd.WaitUntilIdle();            
-            paint.DrawStringAt(0, 0, raspiState == RaspiState::Shutdown ? "POWER OFF" : "PI TIMEOUT", &Font20, 0);
-            epd.DisplayPart(paint.GetImage(), true);
+            display.Clear();
+            display.RenderPowerOffScreen();
+            display.RenderStandbyIcon(5, 40);
+            display.Present(true);
+
             digitalWrite(POWER_OFF_PIN, HIGH);
         }
         else
         {
-            float now = (float)millis() / 1000;
-            paint.DrawStringAt(0, 0, (String(now)).c_str(), &Font24, 0);        
-            paint.DrawStringAt(0, 20, (String("STATE: ") + String(raspiState) + String(" ") + String(raspi.IsBusy())).c_str(), &Font24, 0);
-            paint.DrawStringAt(0, 40, (String("BAT: ") + String(ps.batteryVoltage)).c_str(), &Font24, 0);
-            paint.DrawStringAt(0, 60, (String("FULL: ") + String(ps.batteryIsFull)).c_str(), &Font24, 0);
-            paint.DrawStringAt(0, 80, (String("USB: ") + String(ps.isOnUsb)).c_str(), &Font24, 0);
-            paint.DrawStringAt(0, 100, (String("RFID: ") + is.rfId.c_str()).c_str(), &Font20, 0);
-            paint.DrawStringAt(0, 120, (String("POTI: ") + is.potiValue).c_str(), &Font24, 0);
-            paint.DrawStringAt(0, 140, artist.c_str(), &Consolas24, 0);
+            display.Clear();
 
-            if (!epd.IsBusy())
-                epd.DisplayPart(paint.GetImage(), false);
+            if (info.playlistName != "")
+                display.RenderCenterText(100, 2, 200, 1, info.playlist);
+            else if (is.rfId != "")
+                display.RenderCenterText(100, 2, 200, 1, "[" + is.rfId + "]");
+            else
+                display.RenderCenterText(100, 2, 200, 1, "SpotiPi");
+            
+
+            display.RenderRectangle(0, 30, 199, 31);
+
+            display.RenderStandbyIcon(5, 40);
+
+            if (info.tracks > 0)
+            {
+                if (raspiState == RaspiState::Playing)
+                    display.RenderPauseIcon(174, 40);
+                if (raspiState == RaspiState::Idle)
+                    display.RenderPlayIcon(174, 40);
+                
+                if (info.track > 0)
+                    display.RenderPrevTrackIcon(5, 140);
+
+                if (info.track < info.tracks - 1)
+                    display.RenderNextTrackIcon(174, 140);
+            }
+
+            if (raspi.IsBusy())
+            {
+                display.RenderBusyAnimation(72, 72);
+            }
+            else if (info.tracks > 0)
+            {
+                {
+                    display.RenderCenterText(100, 38, 140, 1, StringUtils::SecondsToTime(info.time));
+                }
+
+                {
+                    std::stringstream ss;
+                    ss << info.title;
+                    display.RenderCenterText(100, 72, 190, 2, ss.str());
+                }
+
+                {
+                    std::stringstream ss;
+                    ss << (info.track + 1) << "/" << info.tracks;
+                    display.RenderCenterText(100, 138, 140, 1, ss.str());
+                }
+            }            
+
+            display.RenderRectangle(0, 170, 199, 171);
+            display.RenderVolumeIndicator(5, 176, is.potiValue);
+            display.RenderOnlineIndicator(122, 176, info.online);
+            display.RenderBatteryIndicator(156, 176, ps.isCharging, ps.isOnUsb, ps.batteryLevel);
+            display.Present();
         }
     }
 }

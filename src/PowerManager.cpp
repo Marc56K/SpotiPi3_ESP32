@@ -48,6 +48,12 @@ namespace PowerManager
         return voltage;
     }
 
+    int GetBatteryLevel(float v)
+    {
+        int result = (int)round(-274.1735229*v*v*v*v*v+5252.881775*v*v*v*v-40243.0835*v*v*v+154054.9004*v*v-294471.5234*v + 224664.8848);
+        return max(0, min(result, 100));
+    }
+
     void Init()
     {
         pinMode(USB_POWER_PIN, INPUT);
@@ -71,6 +77,8 @@ namespace PowerManager
         result.isCharging = IsCharging();
         result.batteryIsFull = BatteryIsFull();
         result.batteryVoltage = GetBatteryVoltage();
+        result.batteryLevel = GetBatteryLevel(result.batteryVoltage);
+        result.sufficientPower = result.isOnUsb || result.batteryVoltage > 3.3;
         return result;
     }
 }

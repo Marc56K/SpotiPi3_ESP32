@@ -135,4 +135,47 @@ namespace StringUtils
 
         return result.str();
     }
+
+    std::string Trim(const std::string &s)
+    {
+        auto start = s.begin();
+        while (start != s.end() && std::isspace(*start))
+        {
+            start++;
+        }
+
+        auto end = s.end();
+        do 
+        {
+            end--;
+        } while (std::distance(start, end) > 0 && std::isspace(*end));
+
+        return std::string(start, end + 1);
+    }
+
+    std::string Replace(const std::string& s, const std::string& replace,  const std::string& with)
+    {
+        std::string str = s;
+        std::size_t pos = str.find(replace);
+        if (pos != std::string::npos)
+        {
+            str.replace(pos, replace.length(), with);
+        }
+        return str;
+    }
+
+    std::string SecondsToTime(const float seconds)
+    {
+        int minutes = seconds / 60;
+        int secs = seconds - minutes * 60;
+        std::stringstream ss;
+        if (minutes < 10)
+            ss << "0";
+        ss << minutes;
+        ss << ":";
+        if (secs < 10)
+            ss << "0";
+        ss << secs;
+        return ss.str();
+    }
 }
