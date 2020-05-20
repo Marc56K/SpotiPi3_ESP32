@@ -23,14 +23,15 @@ public:
     void RenderBatteryIndicator(const uint32_t x, const uint32_t y, const bool charging, const bool powerIn, const int batLevel);
     void RenderVolumeIndicator(const uint32_t x, const uint32_t y, const int volLevel);
     void RenderOnlineIndicator(const uint32_t x, const uint32_t y, const bool online);
-    void RenderStandbyIcon(const uint32_t x, const uint32_t y);
-    void RenderPlayIcon(const uint32_t x, const uint32_t y);
-    void RenderPauseIcon(const uint32_t x, const uint32_t y);
-    void RenderNextTrackIcon(const uint32_t x, const uint32_t y);
-    void RenderPrevTrackIcon(const uint32_t x, const uint32_t y);
+    void RenderStandbyIcon();
+    void RenderPlayIcon();
+    void RenderPauseIcon();
+    void RenderNextTrackIcon();
+    void RenderPrevTrackIcon();
     void RenderBusyAnimation(const uint32_t x, const uint32_t y);
 
     void RenderSetupScreen(const std::string& wifiSsid, const std::string& setupKey);
+    void RenderTimeoutScreen();
     void RenderPowerOffScreen();
     void RenderLowBatteryScreen();
     void RenderMediaPlayerScreen(const RaspiInfo& info, const InputState& is, const PowerState& ps);

@@ -36,6 +36,7 @@ extern sIMAGE IMG_spinner_3;
 extern sIMAGE IMG_spinner_4;
 extern sIMAGE IMG_spinner_5;
 extern sIMAGE IMG_low_bat;
+extern sIMAGE IMG_timeout;
 
 #ifdef __cplusplus
 }

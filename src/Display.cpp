@@ -162,29 +162,29 @@ void Display::RenderOnlineIndicator(const uint32_t x, const uint32_t y, const bo
     }    
 }
 
-void Display::RenderStandbyIcon(const uint32_t x, const uint32_t y)
+void Display::RenderStandbyIcon()
 {
-    _paint.DrawImage(x, y, &IMG_standby);
+    _paint.DrawImage(5, 40, &IMG_standby);
 }
 
-void Display::RenderPlayIcon(const uint32_t x, const uint32_t y)
+void Display::RenderPlayIcon()
 {
-    _paint.DrawImage(x, y, &IMG_play);
+    _paint.DrawImage(174, 40, &IMG_play);
 }
 
-void Display::RenderPauseIcon(const uint32_t x, const uint32_t y)
+void Display::RenderPauseIcon()
 {
-    _paint.DrawImage(x, y, &IMG_pause);
+    _paint.DrawImage(174, 40, &IMG_pause);
 }
 
-void Display::RenderNextTrackIcon(const uint32_t x, const uint32_t y)
+void Display::RenderNextTrackIcon()
 {
-    _paint.DrawImage(x, y, &IMG_next_track);
+    _paint.DrawImage(174, 140, &IMG_next_track);
 }
 
-void Display::RenderPrevTrackIcon(const uint32_t x, const uint32_t y)
+void Display::RenderPrevTrackIcon()
 {
-    _paint.DrawImage(x, y, &IMG_prev_track);
+    _paint.DrawImage(5, 140, &IMG_prev_track);
 }
 
 void Display::RenderBusyAnimation(const uint32_t x, const uint32_t y)
@@ -222,13 +222,19 @@ void Display::RenderSetupScreen(const std::string& wifiSsid, const std::string& 
     RenderCenterText(100, 120, 200, 1, "WiFi-KEY:", &Consolas20);
     RenderCenterText(100, 145, 200, 1, setupKey);
 
-    RenderStandbyIcon(5, 40);
+    RenderStandbyIcon();
+}
+
+void Display::RenderTimeoutScreen()
+{
+    _paint.DrawImage(0, 0, &IMG_timeout);
+    RenderStandbyIcon();
 }
 
 void Display::RenderPowerOffScreen()
 {
     _paint.DrawImage(0, 0, &IMG_power_off);
-    RenderStandbyIcon(5, 40);
+    RenderStandbyIcon();
 }
 
 void Display::RenderLowBatteryScreen()
@@ -247,20 +253,20 @@ void Display::RenderMediaPlayerScreen(const RaspiInfo& pi, const InputState& is,
 
     RenderRectangle(0, 30, 199, 31);
 
-    RenderStandbyIcon(5, 40);
+    RenderStandbyIcon();
 
     if (pi.player.tracks > 0)
     {
         if (pi.state == RaspiState::Playing)
-            RenderPauseIcon(174, 40);
+            RenderPauseIcon();
         if (pi.state == RaspiState::Idle)
-            RenderPlayIcon(174, 40);
+            RenderPlayIcon();
         
         if (pi.player.track > 0)
-            RenderPrevTrackIcon(5, 140);
+            RenderPrevTrackIcon();
 
         if (pi.player.track < pi.player.tracks - 1)
-            RenderNextTrackIcon(174, 140);
+            RenderNextTrackIcon();
     }
 
     if (pi.isBusy)

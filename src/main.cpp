@@ -73,9 +73,20 @@ void loop()
         {
             display.Clear();
             if (ps.sufficientPower)
-                display.RenderPowerOffScreen();
+            {
+                if (pi.state == RaspiState::StartTimeout)
+                {
+                    display.RenderTimeoutScreen();
+                }
+                else
+                {
+                    display.RenderPowerOffScreen();
+                }                
+            }
             else
+            {
                 display.RenderLowBatteryScreen();
+            }
             display.Present(true);
             PowerManager::PowerOff();
         }
