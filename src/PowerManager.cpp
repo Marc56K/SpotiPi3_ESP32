@@ -27,9 +27,13 @@ namespace PowerManager
             
         digitalWrite(BAT_LEVEL_ENABLE_PIN, HIGH);
         delay(1);
-        int x = analogRead(BAT_LEVEL_VALUE_PIN);
+        int x = 0;
+        for (int i = 0; i < 20; i++)
+        {
+            x += analogRead(BAT_LEVEL_VALUE_PIN);
+        }
         digitalWrite(BAT_LEVEL_ENABLE_PIN, LOW);
-        return x;
+        return x / 20;
     }
 
     float voltage = -1;

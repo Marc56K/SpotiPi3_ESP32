@@ -228,7 +228,7 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
             _serial.WriteKeyValue("togglePlayPause", 1);
         }
 
-        if (is.buttons[0] > 0 || !ps.sufficientPower || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > AUTO_SHUTDOWN_DELAY))
+        if (is.buttons[0] > 0 || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > AUTO_SHUTDOWN_DELAY))
         {
             _serial.WriteKeyValue("shutdown", 1);
             SetState(RaspiState::ShuttingDown);
