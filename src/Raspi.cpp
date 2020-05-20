@@ -5,7 +5,7 @@
 #define SHUTDOWN_DURATION 15000 // 15 sec
 
 Raspi::Raspi(SettingsManager& settings)
-    : _state(RaspiState::Restart), _settings(settings)
+    : _settings(settings)
 {
     _lastStateChange = millis();
     _lastHeartbeat = millis();
@@ -19,9 +19,9 @@ Raspi::~Raspi()
 
 void Raspi::SetState(RaspiState state)
 {
-    if (state != _state)
+    if (state != _raspiInfo.state)
     {
-        _state = state;
+        _raspiInfo.state = state;
         _lastStateChange = millis();
     }
 }
@@ -40,16 +40,18 @@ unsigned long Raspi::GetTimeInCurrentState()
     return t + now;
 }
 
-bool Raspi::IsBusy()
+ void Raspi::RefreshBusyState()
 {
-    if (_state != RaspiState::Idle && _state != RaspiState::Playing)
+    if (_raspiInfo.state != RaspiState::Idle && _raspiInfo.state != RaspiState::Playing)
     {
-        return true;
+        _raspiInfo.isBusy = true;
+        return;
     }
 
-    if (!_info.mopidyStarted)
+    if (!_raspiInfo.playerStarted)
     {
-        return true;
+        _raspiInfo.isBusy = true;
+        return;
     }
 
     unsigned long delta = 0;
@@ -65,12 +67,7 @@ bool Raspi::IsBusy()
         t -= _lastHeartbeat;
         delta = t + now;
     }
-    return delta > 2000;
-}
-
-SpotiPiInfo& Raspi::Info()
-{
-    return _info;
+    _raspiInfo.isBusy = delta > 2000;
 }
 
 SerialInterface& Raspi::Serial()
@@ -88,7 +85,7 @@ void Raspi::SendSettings()
     _serial.WriteKeyValue("spotifyClientSecret", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_SECRET));    
 }
 
-RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
+RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
 {
     auto json = _serial.Read();
     bool jsonReceived = json.size() > 0;
@@ -98,7 +95,7 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
         _lastHeartbeat = millis();
     }
 
-    if (_state == RaspiState::ShuttingDown)
+    if (_raspiInfo.state == RaspiState::ShuttingDown)
     {
         if (is.buttons[0] > 0 && ps.sufficientPower)
         {
@@ -113,7 +110,7 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
         }
     }
 
-    if (_state == RaspiState::Shutdown)
+    if (_raspiInfo.state == RaspiState::Shutdown)
     {
         if (is.buttons[0] > 0 && ps.sufficientPower)
         {
@@ -122,7 +119,7 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
         }
     }
 
-    if (_state == RaspiState::Restart)
+    if (_raspiInfo.state == RaspiState::Restart)
     {
         if (GetTimeInCurrentState() >= _restartDelay)
         {
@@ -140,7 +137,7 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
         }
     }
 
-    if (_state == RaspiState::Starting)
+    if (_raspiInfo.state == RaspiState::Starting)
     {
         if (jsonReceived)
         {
@@ -154,7 +151,7 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
         }
     }
 
-    if (_state == RaspiState::Idle || _state == RaspiState::Playing)
+    if (_raspiInfo.state == RaspiState::Idle || _raspiInfo.state == RaspiState::Playing)
     {
         if (jsonReceived)
         {
@@ -163,44 +160,44 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
             else
                 SetState(RaspiState::Idle);
 
-            _info.Clear();
-
-            _info.mopidyStarted = !(json.containsKey("error") && json["error"] == "Not connected");
+            _raspiInfo.playerStarted = !(json.containsKey("error") && json["error"] == "Not connected");
 
             if (json.containsKey("online"))
-                _info.online = json["online"].as<bool>();
+                _raspiInfo.online = json["online"].as<bool>();
+            else
+                _raspiInfo.online = false;
+
+            _raspiInfo.player.Clear();
 
             if (json.containsKey("tracks"))
-                _info.tracks = json["tracks"].as<int>();
+                _raspiInfo.player.tracks = json["tracks"].as<int>();
 
             if (json.containsKey("track"))
-                _info.track = json["track"].as<int>();
+                _raspiInfo.player.track = json["track"].as<int>();
 
             if (json.containsKey("time"))
-                _info.time = json["time"].as<float>();
+                _raspiInfo.player.time = json["time"].as<float>();
 
             if (json.containsKey("state"))
-                _info.state = json["state"].as<char*>();
+                _raspiInfo.player.state = json["state"].as<char*>();
 
             if (json.containsKey("playlistId"))
-                _info.playlistId = json["playlistId"].as<char*>();
+                _raspiInfo.player.playlistId = json["playlistId"].as<char*>();
 
             if (json.containsKey("playlistName"))
-                _info.playlistName = StringUtils::Utf8ToLatin1String(json["playlistName"].as<char*>());
+                _raspiInfo.player.playlistName = StringUtils::Utf8ToLatin1String(json["playlistName"].as<char*>());
 
             if (json.containsKey("album"))
-                _info.album = StringUtils::Utf8ToLatin1String(json["album"].as<char*>());
+                _raspiInfo.player.album = StringUtils::Utf8ToLatin1String(json["album"].as<char*>());
 
             if (json.containsKey("artist"))
-                _info.artist = StringUtils::Utf8ToLatin1String(json["artist"].as<char*>());
+                _raspiInfo.player.artist = StringUtils::Utf8ToLatin1String(json["artist"].as<char*>());
 
             if (json.containsKey("title"))
-                _info.title = StringUtils::Utf8ToLatin1String(json["title"].as<char*>());
+                _raspiInfo.player.title = StringUtils::Utf8ToLatin1String(json["title"].as<char*>());
 
-            if (_info.playlistId != "" && _info.playlistName != "")
-            {
-                _info.playlist = StringUtils::Trim(StringUtils::Replace(_info.playlistName, _info.playlistId, ""));
-            }
+            if (_raspiInfo.player.playlistId != "" && _raspiInfo.player.playlistName != "")
+                _raspiInfo.player.playlist = StringUtils::Trim(StringUtils::Replace(_raspiInfo.player.playlistName, _raspiInfo.player.playlistId, ""));
 
             _serial.WriteKeyValue("playlist", is.rfId);
         }
@@ -231,7 +228,7 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
             _serial.WriteKeyValue("togglePlayPause", 1);
         }
 
-        if (is.buttons[0] > 0 || !ps.sufficientPower || (_state == RaspiState::Idle && GetTimeInCurrentState() > AUTO_SHUTDOWN_DELAY))
+        if (is.buttons[0] > 0 || !ps.sufficientPower || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > AUTO_SHUTDOWN_DELAY))
         {
             _serial.WriteKeyValue("shutdown", 1);
             SetState(RaspiState::ShuttingDown);
@@ -239,9 +236,10 @@ RaspiState Raspi::Update(const PowerState& ps, const InputState& is)
     }
     else
     {
-        _info.Clear();
+        _raspiInfo.player.Clear();
     }
     
+    RefreshBusyState();
 
-    return _state;
+    return _raspiInfo;
 }

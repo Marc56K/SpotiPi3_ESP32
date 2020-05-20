@@ -18,10 +18,8 @@ enum RaspiState
     Shutdown,
 };
 
-struct SpotiPiInfo
+struct PlayerInfo
 {
-    bool online;
-    bool mopidyStarted;
     int tracks;
     int track;
     float time;
@@ -35,8 +33,6 @@ struct SpotiPiInfo
 
     void Clear()
     {
-        online = false;
-        mopidyStarted = false;
         tracks = 0;
         track = 0;
         time = 0;
@@ -49,9 +45,26 @@ struct SpotiPiInfo
         title = "";
     }
 
-    SpotiPiInfo()
+    PlayerInfo()
     {
         Clear();
+    }
+};
+
+struct RaspiInfo
+{
+    RaspiState state;
+    bool isBusy;
+    bool online;
+    bool playerStarted;
+    PlayerInfo player;
+
+    RaspiInfo()
+    {
+        state = RaspiState::Restart;
+        isBusy = false;
+        online = false;
+        playerStarted = false;
     }
 };
 
@@ -62,22 +75,19 @@ public:
     ~Raspi();
 
     unsigned long GetTimeInCurrentState();
-    bool IsBusy();
-    SpotiPiInfo& Info();
     SerialInterface& Serial();
-    RaspiState Update(const PowerState& ps, const InputState& is);
+    RaspiInfo& Update(const PowerState& ps, const InputState& is);
 
 private:
+    void RefreshBusyState();
     void SetState(RaspiState state);
     void SendSettings();
 
 private:
-    RaspiState _state;
+    RaspiInfo _raspiInfo;
     SettingsManager& _settings;
     SerialInterface _serial;
     unsigned long _lastStateChange;
     unsigned long _lastHeartbeat;
     unsigned long _restartDelay;
-
-    SpotiPiInfo _info;
 };

@@ -81,4 +81,9 @@ namespace PowerManager
         result.sufficientPower = result.isOnUsb || result.batteryVoltage > 3.3;
         return result;
     }
+
+    void PowerOff()
+    {
+        digitalWrite(POWER_OFF_PIN, HIGH);
+    }
 }

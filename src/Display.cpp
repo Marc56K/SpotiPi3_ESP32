@@ -58,9 +58,11 @@ void Display::WaitUntilIdle()
     _epd.WaitUntilIdle();
 }
 
-void Display::RenderCenterText(const uint32_t x, const uint32_t y, const uint32_t maxWidth, const uint32_t maxLines, const std::string& txt)
+void Display::RenderCenterText(const uint32_t x, const uint32_t y, const uint32_t maxWidth, const uint32_t maxLines, const std::string& txt, sFONT* font)
 {
-    sFONT* font = &Consolas24;
+    if (font == nullptr)
+        font = &Consolas24;
+
     int textWidth = font->Width * txt.length();
     if (textWidth <= maxWidth)
     {
@@ -95,20 +97,6 @@ void Display::RenderCenterText(const uint32_t x, const uint32_t y, const uint32_
 void Display::RenderRectangle(const uint32_t x0, const uint32_t y0, const uint32_t x1, const uint32_t y1)
 {
     _paint.DrawFilledRectangle(x0, y0, x1, y1, 0);
-}
-
-void Display::RenderSetupScreen(const std::string& wifiSsid, const std::string& setupKey)
-{    
-    _paint.DrawStringAt(0, 0, "  Setup Mode", &Font20, 0);
-    _paint.DrawStringAt(0, 40,  "WiFi-SSID: ", &Font16, 0);
-    _paint.DrawStringAt(0, 60,  wifiSsid.c_str(), &Font20, 0);
-    _paint.DrawStringAt(0, 100, "WiFi-KEY:", &Font16, 0);
-    _paint.DrawStringAt(0, 120, setupKey.c_str(), &Font24, 0);    
-}
-
-void Display::RenderPowerOffScreen()
-{
-    _paint.DrawImage(0, 0, &IMG_power_off);
 }
 
 void Display::RenderBatteryIndicator(const uint32_t x, const uint32_t y, const bool charging, const bool powerIn, const int batLevel)
@@ -222,4 +210,84 @@ void Display::RenderBusyAnimation(const uint32_t x, const uint32_t y)
         default:
             _paint.DrawImage(x, y, &IMG_spinner_5);
     }
+}
+
+void Display::RenderSetupScreen(const std::string& wifiSsid, const std::string& setupKey)
+{    
+    RenderCenterText(100, 0, 200, 1, "Setup Mode");
+    RenderRectangle(0, 30, 199, 31);
+
+    RenderCenterText(100, 50, 200, 1, "WiFi-SSID:", &Consolas20);
+    RenderCenterText(100, 75, 200, 1, wifiSsid);
+    RenderCenterText(100, 120, 200, 1, "WiFi-KEY:", &Consolas20);
+    RenderCenterText(100, 145, 200, 1, setupKey);
+
+    RenderStandbyIcon(5, 40);
+}
+
+void Display::RenderPowerOffScreen()
+{
+    _paint.DrawImage(0, 0, &IMG_power_off);
+    RenderStandbyIcon(5, 40);
+}
+
+void Display::RenderLowBatteryScreen()
+{
+    _paint.DrawImage(0, 0, &IMG_low_bat);
+}
+
+void Display::RenderMediaPlayerScreen(const RaspiInfo& pi, const InputState& is, const PowerState& ps)
+{
+    if (pi.player.playlistName != "")
+        RenderCenterText(100, 2, 200, 1, pi.player.playlist);
+    else if (is.rfId != "")
+        RenderCenterText(100, 2, 200, 1, "[" + is.rfId + "]");
+    else
+        RenderCenterText(100, 2, 200, 1, "SpotiPi");    
+
+    RenderRectangle(0, 30, 199, 31);
+
+    RenderStandbyIcon(5, 40);
+
+    if (pi.player.tracks > 0)
+    {
+        if (pi.state == RaspiState::Playing)
+            RenderPauseIcon(174, 40);
+        if (pi.state == RaspiState::Idle)
+            RenderPlayIcon(174, 40);
+        
+        if (pi.player.track > 0)
+            RenderPrevTrackIcon(5, 140);
+
+        if (pi.player.track < pi.player.tracks - 1)
+            RenderNextTrackIcon(174, 140);
+    }
+
+    if (pi.isBusy)
+    {
+        RenderBusyAnimation(72, 72);
+    }
+    else if (pi.player.tracks > 0)
+    {
+        {
+            RenderCenterText(100, 38, 140, 1, StringUtils::SecondsToTime(pi.player.time));
+        }
+
+        {
+            std::stringstream ss;
+            ss << pi.player.title;
+            RenderCenterText(100, 72, 190, 2, ss.str());
+        }
+
+        {
+            std::stringstream ss;
+            ss << (pi.player.track + 1) << "/" << pi.player.tracks;
+            RenderCenterText(100, 138, 140, 1, ss.str());
+        }
+    }            
+
+    RenderRectangle(0, 170, 199, 171);
+    RenderVolumeIndicator(5, 176, is.potiValue);
+    RenderOnlineIndicator(122, 176, pi.online);
+    RenderBatteryIndicator(156, 176, ps.isCharging, ps.isOnUsb, ps.batteryLevel);
 }

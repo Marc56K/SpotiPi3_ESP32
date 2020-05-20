@@ -15,8 +15,8 @@ enum Setting : uint8_t
     NUM_SETTINGS
 };
 
-static char SettingName[][32] =
- {
+const char SettingName[][32] =
+{
     "SETUP_KEY",
     "WIFI_SSID",
     "WIFI_KEY",
@@ -24,7 +24,7 @@ static char SettingName[][32] =
     "SPOTIFY_PASSWORD",
     "SPOTIFY_CLIENT_ID",
     "SPOTIFY_CLIENT_SECRET"
- };
+};
 
 class SettingsManager
 {

@@ -15,4 +15,5 @@ namespace PowerManager
 {
     void Init();
     PowerState GetPowerState();
+    void PowerOff();
 };
