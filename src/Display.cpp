@@ -290,7 +290,11 @@ void Display::RenderMediaPlayerScreen(const RaspiInfo& pi, const InputState& is,
             ss << (pi.player.track + 1) << "/" << pi.player.tracks;
             RenderCenterText(100, 138, 140, 1, ss.str());
         }
-    }            
+    }
+    else
+    {
+        _paint.DrawImage(0, 0, &IMG_no_playlist);
+    }          
 
     RenderRectangle(0, 170, 199, 171);
     RenderVolumeIndicator(5, 176, is.potiValue);
