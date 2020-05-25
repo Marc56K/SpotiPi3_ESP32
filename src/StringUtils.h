@@ -14,4 +14,6 @@ namespace StringUtils
     std::string Trim(const std::string& s);
     std::string Replace(const std::string& s, const std::string& replace,  const std::string& with);
     std::string SecondsToTime(const float seconds);
+    std::vector<std::string> Split(const std::string& s, char delimiter);
+    std::vector<std::string> LineWrap(const uint32_t maxCharsPerLine, const uint32_t maxLines, const std::string& txt);
 }

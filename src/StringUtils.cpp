@@ -178,4 +178,90 @@ namespace StringUtils
         ss << secs;
         return ss.str();
     }
+
+    std::vector<std::string> Split(const std::string& s, char delimiter)
+    {
+        std::vector<std::string> tokens;
+        std::string token;
+        std::istringstream tokenStream(s);
+        while (std::getline(tokenStream, token, delimiter))
+        {
+            tokens.push_back(token);
+        }
+        return tokens;
+    }
+
+    std::vector<std::string> LineWrap(const uint32_t maxCharsPerLine, const uint32_t maxLines, const std::string& txt)
+    {
+        std::vector<std::string> result;
+
+        std::vector<std::string> words = Split(txt, ' ');
+        std::stringstream currentLine;
+        uint32_t currentLineLength = 0;
+        for (auto wordIt = words.begin(); wordIt != words.end(); wordIt++)
+        {
+            std::string& word = *wordIt;
+
+            if (currentLineLength > 0 && currentLineLength + word.length() + 1 > maxCharsPerLine)
+            {
+                result.push_back(currentLine.str());
+                currentLine.str("");
+                currentLine.clear();
+                currentLineLength = 0;
+                if (result.size() > maxLines) break;
+            }
+
+            if (currentLineLength == 0 && word.length() >= maxCharsPerLine)
+            {
+                for (uint32_t i = 0; i < word.length(); i++)
+                {
+                    currentLineLength++;
+                    currentLine << word[i];
+                    if (currentLineLength >= maxCharsPerLine)
+                    {
+                        result.push_back(currentLine.str());
+                        currentLine.str("");
+                        currentLine.clear();
+                        currentLineLength = 0;
+                        if (result.size() > maxLines) break;
+                    }
+                }
+            }
+            else
+            {
+                if (currentLineLength == 0 && currentLineLength + word.length() <= maxCharsPerLine)
+                {
+                    currentLineLength += word.length();
+                    currentLine << word;
+                }
+                else if (currentLineLength > 0 && currentLineLength + word.length() + 1 <= maxCharsPerLine)
+                {
+                    currentLineLength++;
+                    currentLine << ' ';
+                    currentLineLength += word.length();
+                    currentLine << word;
+                }
+            }
+        }
+
+        if (currentLineLength > 0)
+        {
+            result.push_back(currentLine.str());
+        }
+
+        if (result.size() > maxLines)
+        {
+            while (result.size() > maxLines)
+            {
+                result.pop_back();
+            }
+            if (result.size() > 0 && maxCharsPerLine > 2)
+            {
+                std::string& lastLine = result.back();
+                lastLine = lastLine.substr(0, std::max((int)lastLine.length() - 3, (int)maxCharsPerLine - 3)) + "...";
+            }
+        }
+
+        return result;
+    }
 }

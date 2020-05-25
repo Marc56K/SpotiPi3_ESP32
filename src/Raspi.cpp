@@ -82,7 +82,7 @@ void Raspi::SendSettings()
     _serial.WriteKeyValue("spotifyUser", _settings.GetStringValue(Setting::SPOTIFY_USER));
     _serial.WriteKeyValue("spotifyPassword", _settings.GetStringValue(Setting::SPOTIFY_PASSWORD));
     _serial.WriteKeyValue("spotifyClientId", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_ID));
-    _serial.WriteKeyValue("spotifyClientSecret", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_SECRET));    
+    _serial.WriteKeyValue("spotifyClientSecret", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_SECRET));
 }
 
 RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)

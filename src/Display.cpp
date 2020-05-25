@@ -63,35 +63,18 @@ void Display::RenderCenterText(const uint32_t x, const uint32_t y, const uint32_
     if (font == nullptr)
         font = &Consolas24;
 
-    int textWidth = font->Width * txt.length();
-    if (textWidth <= maxWidth)
+    uint32_t maxCharsPerLine = maxWidth / font->Width;
+    auto lines = StringUtils::LineWrap(maxCharsPerLine, maxLines, txt);
+    int yPos = y;
+    int line = 0;
+    for (auto lineIt = lines.begin(); lineIt != lines.end(); lineIt++)
     {
+        int textWidth = font->Width * lineIt->length();
         int xStart= (int)x - textWidth / 2;
-        _paint.DrawStringAt(xStart, y, txt.c_str(), font, 0);
+        _paint.DrawStringAt(xStart, yPos, (*lineIt).c_str(), font, 0);
+        yPos += font->Height;
+        line++;
     }
-    else if (maxLines > 1)
-    {
-        int maxCharsPerLine = max(0, (int)maxWidth / font->Width);
-        int yPos = y;
-        int line = 0;
-        for (int i = 0; i < txt.length() && line < maxLines; i+= maxCharsPerLine)
-        {
-            std::string s = StringUtils::Trim(txt.substr(i, min((int)txt.length(), maxCharsPerLine)));
-            textWidth = font->Width * s.length();
-            int xStart= (int)x - textWidth / 2;
-            _paint.DrawStringAt(xStart, yPos, s.c_str(), font, 0);
-            yPos += font->Height;
-            line++;
-        }      
-    }
-    else
-    {
-        int maxChars = max(0, (int)maxWidth / font->Width - 3);
-        std::string s = txt.substr(0, min((int)txt.length(), maxChars)) + "...";
-        textWidth = font->Width * s.length();
-        int xStart= (int)x - textWidth / 2;
-        _paint.DrawStringAt(xStart, y, s.c_str(), font, 0);
-    }    
 }
 
 void Display::RenderRectangle(const uint32_t x0, const uint32_t y0, const uint32_t x1, const uint32_t y1)
