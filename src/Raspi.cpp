@@ -39,7 +39,21 @@ unsigned long Raspi::GetTimeInCurrentState()
     return t + now;
 }
 
- void Raspi::RefreshBusyState()
+unsigned long Raspi::GetTimeSinceLastHeartbeat()
+{
+    auto now = millis();
+    if (now >= _lastHeartbeat)
+    {
+        return now - _lastHeartbeat;
+    }
+
+    // handle time overflow
+    unsigned long t = -1;
+    t -= _lastHeartbeat;
+    return t + now;
+}
+
+void Raspi::RefreshBusyState()
 {
     if (_raspiInfo.state != RaspiState::Idle && _raspiInfo.state != RaspiState::Playing)
     {
@@ -53,20 +67,8 @@ unsigned long Raspi::GetTimeInCurrentState()
         return;
     }
 
-    unsigned long delta = 0;
-    auto now = millis();
-    if (now >= _lastHeartbeat)
-    {
-        delta = now - _lastHeartbeat;
-    }
-    else
-    {
-        // handle time overflow
-        unsigned long t = -1;
-        t -= _lastHeartbeat;
-        delta = t + now;
-    }
-    _raspiInfo.isBusy = delta > 2000;
+
+    _raspiInfo.isBusy = GetTimeSinceLastHeartbeat() > 2000;
 }
 
 SerialInterface& Raspi::Serial()
@@ -227,7 +229,11 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
             _serial.WriteKeyValue("togglePlayPause", 1);
         }
 
-        if (is.buttons[0] > 0 || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > (_settings.GetIntValue(Setting::SHUTDOWN_DELAY) * 60000)))
+        unsigned long shutdownDelay = std::max(_settings.GetIntValue(Setting::SHUTDOWN_DELAY), 1) * 60000;
+        if (is.buttons[0] > 0
+            || !ps.sufficientPower
+            || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > shutdownDelay)
+            || (GetTimeSinceLastHeartbeat() > shutdownDelay))
         {
             _serial.WriteKeyValue("shutdown", 1);
             SetState(RaspiState::ShuttingDown);

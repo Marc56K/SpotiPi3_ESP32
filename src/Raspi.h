@@ -75,6 +75,7 @@ public:
     ~Raspi();
 
     unsigned long GetTimeInCurrentState();
+    unsigned long GetTimeSinceLastHeartbeat();
     SerialInterface& Serial();
     RaspiInfo& Update(const PowerState& ps, const InputState& is);
 

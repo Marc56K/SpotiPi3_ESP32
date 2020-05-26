@@ -90,25 +90,17 @@ void Display::RenderBatteryIndicator(const uint32_t x, const uint32_t y, const b
         level = ((millis() / 750) % 5) * 25;
     }
 
-    level = (int)round((float)level / 25);
     sIMAGE* img = nullptr;
-    switch(level)
-    {
-        case 0:
-            img = &IMG_bat_0;
-            break;
-        case 1:
-            img = &IMG_bat_25;
-            break;
-        case 2:
-            img = &IMG_bat_50;
-            break;
-        case 3:
-            img = &IMG_bat_75;
-            break;
-        default:
-            img = &IMG_bat_100;
-    }
+    if (level <= 10)
+        img = &IMG_bat_0;
+    else if (level <= 25)
+        img = &IMG_bat_25;
+    else if (level <= 50)
+        img = &IMG_bat_50;
+    else if (level <= 75)
+        img = &IMG_bat_75;
+    else
+        img = &IMG_bat_100;
 
     _paint.DrawImage(x, y, img);
 
