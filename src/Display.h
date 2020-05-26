@@ -1,5 +1,6 @@
 #pragma once
 #include "SetupManager.h"
+#include "SettingsManager.h"
 #include "Raspi.h"
 #include <epd1in54_V2.h>
 #include <epdpaint.h>
@@ -8,7 +9,7 @@
 class Display
 {
 public:
-    Display();
+    Display(SettingsManager& settings);
     ~Display();
 
     void Init();
@@ -30,13 +31,14 @@ public:
     void RenderPrevTrackIcon();
     void RenderBusyAnimation(const uint32_t x, const uint32_t y);
 
-    void RenderSetupScreen(const std::string& wifiSsid, const std::string& setupKey);
+    void RenderSetupScreen(const std::string& wifiSsid);
     void RenderTimeoutScreen();
     void RenderPowerOffScreen();
     void RenderLowBatteryScreen();
     void RenderMediaPlayerScreen(const RaspiInfo& info, const InputState& is, const PowerState& ps);
 
 private:
+    SettingsManager& _settings;
     unsigned char _buffer[200 * 200];
     Paint _paint;
     Epd _epd;

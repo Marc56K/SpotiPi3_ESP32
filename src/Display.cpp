@@ -2,8 +2,8 @@
 #include "Log.h"
 #include "StringUtils.h"
 
-Display::Display()
-    : _paint(_buffer, 200, 200)
+Display::Display(SettingsManager& settings)
+    : _settings(settings), _paint(_buffer, 200, 200)
 {
 
 }
@@ -201,7 +201,7 @@ void Display::RenderBusyAnimation(const uint32_t x, const uint32_t y)
     }
 }
 
-void Display::RenderSetupScreen(const std::string& wifiSsid, const std::string& setupKey)
+void Display::RenderSetupScreen(const std::string& wifiSsid)
 {    
     RenderCenterText(100, 0, 200, 1, "Setup Mode");
     RenderRectangle(0, 30, 199, 31);
@@ -209,7 +209,7 @@ void Display::RenderSetupScreen(const std::string& wifiSsid, const std::string& 
     RenderCenterText(100, 50, 200, 1, "WiFi-SSID:", &Consolas20);
     RenderCenterText(100, 75, 200, 1, wifiSsid);
     RenderCenterText(100, 120, 200, 1, "WiFi-KEY:", &Consolas20);
-    RenderCenterText(100, 145, 200, 1, setupKey);
+    RenderCenterText(100, 145, 200, 1, _settings.GetStringValue(Setting::SETUP_KEY));
 
     RenderStandbyIcon();
 }
@@ -238,7 +238,7 @@ void Display::RenderMediaPlayerScreen(const RaspiInfo& pi, const InputState& is,
     else if (is.rfId != "")
         RenderCenterText(100, 2, 200, 1, "[" + is.rfId + "]");
     else
-        RenderCenterText(100, 2, 200, 1, "SpotiPi");    
+        RenderCenterText(100, 2, 200, 1, _settings.GetStringValue(Setting::DISPLAY_NAME));    
 
     RenderRectangle(0, 30, 199, 31);
 

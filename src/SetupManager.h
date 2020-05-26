@@ -25,6 +25,7 @@ private:
     WebServer _httpServer;
     bool _setupCompleted;
     SettingsManager& _settings;
+    std::vector<std::string> _wifiList;
 
     uint64_t reg_a;
     uint64_t reg_b;

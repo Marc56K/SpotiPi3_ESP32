@@ -46,6 +46,14 @@ SetupManager::SetupManager(SettingsManager& settings)
         _dnsServer.start(DNS_PORT, "*", apIP);
     }
 
+    WiFi.scanDelete();
+    int numWifis = WiFi.scanNetworks(false, false);
+    for (int i = 0; i < numWifis; i++)
+    {
+        _wifiList.push_back(WiFi.SSID(i).c_str());        
+    }
+    std::sort(_wifiList.begin(), _wifiList.end());
+
     // init http server
     _httpServer.on("/", [this]() { HandleRootRequest(); });
     _httpServer.on("/save", [this]() { HandleSaveRequest(); });
@@ -88,8 +96,6 @@ void SetupManager::Update()
 void SetupManager::HandleRootRequest()
 {   
     Log().Info("SETUP") << "HandleRootRequest" << std::endl;
-    WiFi.scanDelete();
-    int numWifis = WiFi.scanNetworks(false, false);
 
     // HTML Header
     _httpServer.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -100,14 +106,14 @@ void SetupManager::HandleRootRequest()
     _httpServer.send (200, "text/html", "");
     _httpServer.sendContent("<!DOCTYPE HTML><html lang=\"de\"><head><meta charset=\"UTF-8\"><meta name= viewport content=\"width=device-width, initial-scale=1.0,\">");
     _httpServer.sendContent("<head><title>SpotiPi</title>");
-    //_httpServer.sendContent("<link rel=\"stylesheet\" href=\"bootstrap.min.css\">");
+
     _httpServer.sendContent("<style>");
     _httpServer.sendContent_P(bootstrap_css);
     _httpServer.sendContent("</style>");
     _httpServer.sendContent("</head><body style=\"padding: 5px;\">");
     _httpServer.sendContent("<form action=\"/save\" method=\"post\">");
 
-    _httpServer.sendContent(StringUtils::HtmlSelectBox(SettingName[Setting::WIFI_SSID], "WiFi-SSID", _settings.GetStringValue(Setting::WIFI_SSID), numWifis, [] (uint32_t i) { return WiFi.SSID(i).c_str(); } ).c_str());
+    _httpServer.sendContent(StringUtils::HtmlSelectBox(SettingName[Setting::WIFI_SSID], "WiFi-SSID", _settings.GetStringValue(Setting::WIFI_SSID), _wifiList.size(), [&] (uint32_t i) { return _wifiList[i]; } ).c_str());
     _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::WIFI_KEY], "WiFi-Password", _settings.GetStringValue(Setting::WIFI_KEY), true).c_str());
 
     _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::SPOTIFY_USER], "Spotify-Username", _settings.GetStringValue(Setting::SPOTIFY_USER), false).c_str());
@@ -115,6 +121,10 @@ void SetupManager::HandleRootRequest()
     _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::SPOTIFY_CLIENT_ID], "Spotify-Client-Id", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_ID), false).c_str());
     _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::SPOTIFY_CLIENT_SECRET], "Spotify-Client-Secret", _settings.GetStringValue(Setting::SPOTIFY_CLIENT_SECRET), false).c_str());
 
+    _httpServer.sendContent(StringUtils::HtmlTextInput(SettingName[Setting::DISPLAY_NAME], "Display-Name", _settings.GetStringValue(Setting::DISPLAY_NAME), false).c_str());
+    _httpServer.sendContent(StringUtils::HtmlNumberInput(SettingName[Setting::MAX_VOLUME], "Max Volume (%)", _settings.GetIntValue(Setting::MAX_VOLUME), 0, 100).c_str());    
+    _httpServer.sendContent(StringUtils::HtmlNumberInput(SettingName[Setting::SHUTDOWN_DELAY], "Automatic Shutdown (Minutes)", _settings.GetIntValue(Setting::SHUTDOWN_DELAY), 0, 60).c_str());
+    
     _httpServer.sendContent("<button type=\"submit\" class=\"btn btn-primary\">Save</button>");
     _httpServer.sendContent("</form>");
     _httpServer.sendContent("</body></html>");

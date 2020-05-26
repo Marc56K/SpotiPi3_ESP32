@@ -1,9 +1,9 @@
 #include <SPI.h>
 #include "Display.h"
 
-Display display;
 SetupManager* setupMgr = nullptr;
 SettingsManager settings;
+Display display(settings);
 Raspi raspi(settings);
 
 void InitSettings()
@@ -50,7 +50,7 @@ void loop()
         setupMgr->Update();
 
         display.Clear();
-        display.RenderSetupScreen(setupMgr->GetWifiSsid(), settings.GetStringValue(Setting::SETUP_KEY));
+        display.RenderSetupScreen(setupMgr->GetWifiSsid());
         display.Present();
 
         if (is.buttons[0] > 0 || setupMgr->SetupCompleted())
@@ -61,6 +61,8 @@ void loop()
     }
     else
     {
+        is.potiValue = std::min(is.potiValue, (uint32_t)settings.GetIntValue(Setting::MAX_VOLUME));
+
         RaspiInfo& pi = raspi.Update(ps, is);
 
         if (pi.state == RaspiState::ShuttingDown)

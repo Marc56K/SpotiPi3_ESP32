@@ -47,6 +47,19 @@ namespace StringUtils
         return result.str();
     }
 
+    std::string HtmlNumberInput(const std::string& id, const std::string& label, const int value, const int minValue, const int maxValue)
+    {
+        std::ostringstream result;
+        result << "<div class=\"form-group\">";
+        result << "<label for=\"" << id << "\">" << HtmlEncode(label) << "</label>";
+        result << "<input class=\"form-control\" type=\"number\" id=\"" << id << "\" name=\"" << id << "\" ";
+        result << "value=\"" << value << "\" ";
+        result << "min=\"" << minValue << "\" ";
+        result << "max=\"" << maxValue << "\">";
+        result << "</div>";
+        return result.str();
+    }
+
     std::string HtmlSelectBox(const std::string& id, const std::string& label, const std::string& value, const uint32_t numOptions, std::function<std::string(uint32_t)> options)
     {
         std::ostringstream result;

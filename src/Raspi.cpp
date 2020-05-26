@@ -1,7 +1,6 @@
 #include "Raspi.h"
 
 #define MAX_START_DURATION 90000 // 90 sec
-#define AUTO_SHUTDOWN_DELAY 600000 // 10 min
 #define SHUTDOWN_DURATION 15000 // 15 sec
 
 Raspi::Raspi(SettingsManager& settings)
@@ -228,7 +227,7 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
             _serial.WriteKeyValue("togglePlayPause", 1);
         }
 
-        if (is.buttons[0] > 0 || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > AUTO_SHUTDOWN_DELAY))
+        if (is.buttons[0] > 0 || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > (_settings.GetIntValue(Setting::SHUTDOWN_DELAY) * 60000)))
         {
             _serial.WriteKeyValue("shutdown", 1);
             SetState(RaspiState::ShuttingDown);

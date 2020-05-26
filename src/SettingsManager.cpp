@@ -58,6 +58,13 @@ void SettingsManager::LoadFromEEPROM()
     }
     EEPROM.end();
     Log().Info("Settings") << "LoadFromEEPROM done " << std::endl;
+
+    InitDefaultValues();
+}
+
+void SettingsManager::InitDefaultValues()
+{
+    bool save = false;
     if (!HasValue(Setting::SETUP_KEY))
     {
         Log().Info("Settings") << "creating SETUP_KEY" << std::endl;
@@ -69,6 +76,29 @@ void SettingsManager::LoadFromEEPROM()
         }
         SetValue(Setting::SETUP_KEY, setupKey);
         Log().Info("Settings") << "SETUP_KEY: " << setupKey << std::endl;
+        save = true;
+    }
+
+    if (!HasValue(Setting::DISPLAY_NAME))
+    {
+        SetValue(Setting::DISPLAY_NAME, "SpotiPi");
+        save = true;
+    }
+
+    if (!HasValue(Setting::SHUTDOWN_DELAY))
+    {
+        SetValue(Setting::SHUTDOWN_DELAY, "10");
+        save = true;
+    }
+
+    if (!HasValue(Setting::MAX_VOLUME))
+    {
+        SetValue(Setting::MAX_VOLUME, "100");
+        save = true;
+    }
+
+    if (save)
+    {
         SaveToEEPROM();
     }
 }
@@ -115,10 +145,17 @@ float SettingsManager::GetFloatValue(Setting key)
     auto it = _settings.find(key);
     if (it != _settings.end())
     {
-        if (sizeof(float) == it->second.size())
-        {
-            return (float)atof((const char*)it->second.data());
-        }
+        return (float)atof((const char*)it->second.data());
+    }
+    return 0;
+}
+
+int SettingsManager::GetIntValue(Setting key)
+{
+    auto it = _settings.find(key);
+    if (it != _settings.end())
+    {
+        return atoi((const char*)it->second.data());
     }
     return 0;
 }

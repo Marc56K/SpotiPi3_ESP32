@@ -12,6 +12,9 @@ enum Setting : uint8_t
     SPOTIFY_PASSWORD,
     SPOTIFY_CLIENT_ID,
     SPOTIFY_CLIENT_SECRET,
+    DISPLAY_NAME,
+    SHUTDOWN_DELAY,
+    MAX_VOLUME,
     NUM_SETTINGS
 };
 
@@ -23,7 +26,10 @@ const char SettingName[][32] =
     "SPOTIFY_USER",
     "SPOTIFY_PASSWORD",
     "SPOTIFY_CLIENT_ID",
-    "SPOTIFY_CLIENT_SECRET"
+    "SPOTIFY_CLIENT_SECRET",
+    "DISPLAY_NAME",
+    "SHUTDOWN_DELAY",
+    "MAX_VOLUME"
 };
 
 class SettingsManager
@@ -38,11 +44,13 @@ public:
 
     bool HasValue(Setting key);
     float GetFloatValue(Setting key);
+    int GetIntValue(Setting key);
     std::string GetStringValue(Setting key);
     void SetValue(Setting key, float value);
     void SetValue(Setting key, const std::string& value);
 
 private:
+    void InitDefaultValues();
     uint32_t ComputeCrc(void* ptr, uint32_t size);
 
 private:
