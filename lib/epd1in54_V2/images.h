@@ -28,6 +28,7 @@ extern sIMAGE IMG_power_in;
 extern sIMAGE IMG_prev_track;
 extern sIMAGE IMG_standby;
 extern sIMAGE IMG_volume;
+extern sIMAGE IMG_mute;
 extern sIMAGE IMG_power_off;
 extern sIMAGE IMG_spinner_0;
 extern sIMAGE IMG_spinner_1;

@@ -120,6 +120,12 @@ void Display::RenderBatteryIndicator(const uint32_t x, const uint32_t y, const b
 
 void Display::RenderVolumeIndicator(const uint32_t x, const uint32_t y, const int volLevel)
 {
+    if (volLevel == 0)
+    {
+        _paint.DrawImage(x, y, &IMG_mute);
+        return;
+    }
+
     _paint.DrawImage(x, y, &IMG_volume);
 
     uint32_t xStart = x + 28;
