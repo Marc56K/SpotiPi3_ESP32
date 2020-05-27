@@ -108,6 +108,10 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
         {
             digitalWrite(PI_POWER_PIN, LOW);
             SetState(RaspiState::Shutdown);
+            if (!ps.sufficientPower)
+            {
+                _raspiInfo.shutdownReason = ShutdownReason::LowPower;
+            }
         }
     }
 
@@ -117,6 +121,7 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
         {
             _restartDelay = 0;
             SetState(RaspiState::Restart);
+            _raspiInfo.shutdownReason = ShutdownReason::None;
         }
     }
 
@@ -130,10 +135,12 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
                 delay(10);
                 digitalWrite(PI_POWER_PIN, HIGH);
                 SetState(RaspiState::Starting);
+                _raspiInfo.shutdownReason = ShutdownReason::None;
             }
             else
             {
                 SetState(RaspiState::Shutdown);
+                _raspiInfo.shutdownReason = ShutdownReason::LowPower;
             }
         }
     }
@@ -148,7 +155,8 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
         else if (GetTimeInCurrentState() > MAX_START_DURATION)
         {
             digitalWrite(PI_POWER_PIN, LOW);
-            SetState(RaspiState::StartTimeout);
+            SetState(RaspiState::Shutdown);
+            _raspiInfo.shutdownReason = ShutdownReason::Timeout;
         }
     }
 
@@ -229,14 +237,29 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
             _serial.WriteKeyValue("togglePlayPause", 1);
         }
 
-        unsigned long shutdownDelay = std::max(_settings.GetIntValue(Setting::SHUTDOWN_DELAY), 1) * 60000;
-        if (is.buttons[0] > 0
-            || !ps.sufficientPower
-            || (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > shutdownDelay)
-            || (GetTimeSinceLastHeartbeat() > shutdownDelay))
+        if (is.buttons[0] > 0)
         {
             _serial.WriteKeyValue("shutdown", 1);
             SetState(RaspiState::ShuttingDown);
+            _raspiInfo.shutdownReason = ShutdownReason::Button;
+        }
+        else if (!ps.sufficientPower)
+        {
+            _serial.WriteKeyValue("shutdown", 1);
+            SetState(RaspiState::ShuttingDown);
+            _raspiInfo.shutdownReason = ShutdownReason::LowPower;
+        }
+        else if (_raspiInfo.state == RaspiState::Idle && GetTimeInCurrentState() > std::max(_settings.GetIntValue(Setting::SHUTDOWN_DELAY), 1) * 60000)
+        {
+            _serial.WriteKeyValue("shutdown", 1);
+            SetState(RaspiState::ShuttingDown);
+            _raspiInfo.shutdownReason = ShutdownReason::Automatic;
+        }
+        else if (GetTimeSinceLastHeartbeat() > 60000)
+        {
+            _serial.WriteKeyValue("shutdown", 1);
+            SetState(RaspiState::ShuttingDown);
+            _raspiInfo.shutdownReason = ShutdownReason::Timeout;
         }
     }
     else

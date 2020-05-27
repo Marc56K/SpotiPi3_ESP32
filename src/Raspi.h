@@ -11,11 +11,19 @@ enum RaspiState
 {
     Restart,
     Starting,
-    StartTimeout,
     Idle,
     Playing,
     ShuttingDown,
     Shutdown,
+};
+
+enum ShutdownReason
+{
+    None = 0,
+    Button,
+    Automatic,
+    Timeout,
+    LowPower,
 };
 
 struct PlayerInfo
@@ -54,6 +62,7 @@ struct PlayerInfo
 struct RaspiInfo
 {
     RaspiState state;
+    ShutdownReason shutdownReason;
     bool isBusy;
     bool online;
     bool playerStarted;
@@ -62,6 +71,7 @@ struct RaspiInfo
     RaspiInfo()
     {
         state = RaspiState::Restart;
+        shutdownReason = ShutdownReason::None;
         isBusy = false;
         online = false;
         playerStarted = false;

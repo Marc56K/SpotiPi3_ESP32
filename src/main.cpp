@@ -68,26 +68,32 @@ void loop()
         if (pi.state == RaspiState::ShuttingDown)
         {
             display.Clear();
-            display.RenderBusyAnimation(72, 72);
+            switch (pi.shutdownReason)
+            {
+                case ShutdownReason::Timeout:
+                    display.RenderTimeoutScreen();
+                    break;
+                case ShutdownReason::LowPower:
+                    display.RenderLowBatteryScreen();
+                    break;
+                default:
+                    display.RenderBusyAnimation(72, 72);
+            }
             display.Present(false);
         }
-        else if (pi.state == RaspiState::Shutdown || pi.state == RaspiState::StartTimeout)
+        else if (pi.state == RaspiState::Shutdown)
         {
             display.Clear();
-            if (ps.sufficientPower)
+            switch (pi.shutdownReason)
             {
-                if (pi.state == RaspiState::StartTimeout)
-                {
+                case ShutdownReason::Timeout:
                     display.RenderTimeoutScreen();
-                }
-                else
-                {
-                    display.RenderPowerOffScreen();
-                }                
-            }
-            else
-            {
-                display.RenderLowBatteryScreen();
+                    break;
+                case ShutdownReason::LowPower:
+                    display.RenderLowBatteryScreen();
+                    break;
+                default:
+                    display.RenderPowerOffScreen(); 
             }
             display.Present(true);
             PowerManager::PowerOff();
@@ -96,7 +102,7 @@ void loop()
         {
             display.Clear();
             display.RenderMediaPlayerScreen(pi, is, ps);
-            display.Present();
+            display.Present(false);
         }
     }
 }
