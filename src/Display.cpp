@@ -92,7 +92,13 @@ void Display::RenderBatteryIndicator(const uint32_t x, const uint32_t y, const b
 
     sIMAGE* img = nullptr;
     if (level <= 10)
+    {
         img = &IMG_bat_0;
+        if (!charging && (millis() / 750) % 2 == 0)
+        {
+            img = nullptr;
+        }
+    }
     else if (level <= 25)
         img = &IMG_bat_25;
     else if (level <= 50)
@@ -102,7 +108,10 @@ void Display::RenderBatteryIndicator(const uint32_t x, const uint32_t y, const b
     else
         img = &IMG_bat_100;
 
-    _paint.DrawImage(x, y, img);
+    if (img != nullptr)
+    {
+        _paint.DrawImage(x, y, img);
+    }    
 
     if (powerIn)
     {
