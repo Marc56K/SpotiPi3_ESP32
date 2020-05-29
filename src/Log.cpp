@@ -6,7 +6,10 @@
 
 Log::~Log()
 {
-    Serial.print(os.str().c_str());
+    if (Serial)
+    {
+        Serial.print(os.str().c_str());
+    }
 }
 
 std::ostringstream& Log::Info(const std::string& sender)

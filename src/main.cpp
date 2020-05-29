@@ -8,15 +8,9 @@ Raspi raspi(settings);
 
 void InitSettings()
 {
-    bool setupMode = digitalRead(BT2_PIN) == HIGH;
-    bool factoryReset = setupMode && digitalRead(BT3_PIN) == HIGH;
-    if (factoryReset)
-    {
-        settings.ClearEEPROM();
-    }
     settings.LoadFromEEPROM();
 
-    if (setupMode)
+    if (digitalRead(BT2_PIN) == HIGH)
     {
         setupMgr = new SetupManager(settings);
     }
@@ -61,7 +55,7 @@ void loop()
     }
     else
     {
-        is.potiValue = std::min(is.potiValue, (uint32_t)settings.GetIntValue(Setting::MAX_VOLUME));
+        is.potiValue = (uint32_t)roundf((float)is.potiValue * settings.GetFloatValue(Setting::MAX_VOLUME) / 100.0f);
 
         RaspiInfo& pi = raspi.Update(ps, is);
 
