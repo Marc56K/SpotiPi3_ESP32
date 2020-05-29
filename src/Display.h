@@ -24,7 +24,7 @@ public:
     void RenderBatteryIndicator(const uint32_t x, const uint32_t y, const bool charging, const bool powerIn, const int batLevel);
     void RenderVolumeIndicator(const uint32_t x, const uint32_t y, const int volLevel);
     void RenderOnlineIndicator(const uint32_t x, const uint32_t y, const bool online);
-    void RenderStandbyIcon();
+    void RenderStandbyIcon(bool disabled);
     void RenderPlayIcon();
     void RenderPauseIcon();
     void RenderNextTrackIcon();

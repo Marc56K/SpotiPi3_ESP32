@@ -8,7 +8,6 @@ Raspi::Raspi(SettingsManager& settings)
 {
     _lastStateChange = millis();
     _lastHeartbeat = millis();
-    _restartDelay = 0;
 }
 
 Raspi::~Raspi()
@@ -96,15 +95,14 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
         _lastHeartbeat = millis();
     }
 
+    if (is.buttons[0] > 0)
+    {
+        _raspiInfo.powerButtonPressed = true;
+    }
+
     if (_raspiInfo.state == RaspiState::ShuttingDown)
     {
-        if (is.buttons[0] > 0 && ps.sufficientPower)
-        {
-            _restartDelay = GetTimeInCurrentState();
-            _restartDelay = _restartDelay < SHUTDOWN_DURATION ? (SHUTDOWN_DURATION - _restartDelay) : 0;
-            SetState(RaspiState::Restart);
-        }
-        else if (GetTimeInCurrentState() > SHUTDOWN_DURATION)
+        if (GetTimeInCurrentState() > SHUTDOWN_DURATION)
         {
             digitalWrite(PI_POWER_PIN, LOW);
             SetState(RaspiState::Shutdown);
@@ -117,31 +115,31 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
 
     if (_raspiInfo.state == RaspiState::Shutdown)
     {
-        if (is.buttons[0] > 0 && ps.sufficientPower)
+        if (_raspiInfo.powerButtonPressed)
         {
-            _restartDelay = 0;
-            SetState(RaspiState::Restart);
-            _raspiInfo.shutdownReason = ShutdownReason::None;
+            _raspiInfo.powerButtonPressed = false;
+            if (ps.sufficientPower)
+            {
+                SetState(RaspiState::Restart);
+                _raspiInfo.shutdownReason = ShutdownReason::None;
+            }
         }
     }
 
     if (_raspiInfo.state == RaspiState::Restart)
     {
-        if (GetTimeInCurrentState() >= _restartDelay)
+        digitalWrite(PI_POWER_PIN, LOW);
+        if (ps.sufficientPower)
         {
-            digitalWrite(PI_POWER_PIN, LOW);
-            if (ps.sufficientPower)
-            {
-                delay(10);
-                digitalWrite(PI_POWER_PIN, HIGH);
-                SetState(RaspiState::Starting);
-                _raspiInfo.shutdownReason = ShutdownReason::None;
-            }
-            else
-            {
-                SetState(RaspiState::Shutdown);
-                _raspiInfo.shutdownReason = ShutdownReason::LowPower;
-            }
+            delay(10);
+            digitalWrite(PI_POWER_PIN, HIGH);
+            SetState(RaspiState::Starting);
+            _raspiInfo.shutdownReason = ShutdownReason::None;
+        }
+        else
+        {
+            SetState(RaspiState::Shutdown);
+            _raspiInfo.shutdownReason = ShutdownReason::LowPower;
         }
     }
 
@@ -237,8 +235,9 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
             _serial.WriteKeyValue("togglePlayPause", 1);
         }
 
-        if (is.buttons[0] > 0)
+        if (_raspiInfo.powerButtonPressed)
         {
+            _raspiInfo.powerButtonPressed = false;
             _serial.WriteKeyValue("shutdown", 1);
             SetState(RaspiState::ShuttingDown);
             _raspiInfo.shutdownReason = ShutdownReason::Button;

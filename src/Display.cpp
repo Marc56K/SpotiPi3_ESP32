@@ -152,9 +152,12 @@ void Display::RenderOnlineIndicator(const uint32_t x, const uint32_t y, const bo
     }    
 }
 
-void Display::RenderStandbyIcon()
+void Display::RenderStandbyIcon(bool disabled)
 {
-    _paint.DrawImage(5, 40, &IMG_standby);
+    if (!disabled)
+    {
+        _paint.DrawImage(5, 40, &IMG_standby);
+    }    
 }
 
 void Display::RenderPlayIcon()
@@ -212,19 +215,19 @@ void Display::RenderSetupScreen(const std::string& wifiSsid)
     RenderCenterText(100, 120, 200, 1, "WiFi-KEY:", &Consolas20);
     RenderCenterText(100, 145, 200, 1, _settings.GetStringValue(Setting::SETUP_KEY));
 
-    RenderStandbyIcon();
+    RenderStandbyIcon(false);
 }
 
 void Display::RenderTimeoutScreen()
 {
     _paint.DrawImage(0, 0, &IMG_timeout);
-    RenderStandbyIcon();
+    RenderStandbyIcon(false);
 }
 
 void Display::RenderPowerOffScreen()
 {
     _paint.DrawImage(0, 0, &IMG_power_off);
-    RenderStandbyIcon();
+    RenderStandbyIcon(false);
 }
 
 void Display::RenderLowBatteryScreen()
@@ -243,7 +246,7 @@ void Display::RenderMediaPlayerScreen(const RaspiInfo& pi, const InputState& is,
 
     RenderRectangle(0, 30, 199, 31);
 
-    RenderStandbyIcon();
+    RenderStandbyIcon(pi.powerButtonPressed);
 
     if (pi.player.tracks > 0)
     {

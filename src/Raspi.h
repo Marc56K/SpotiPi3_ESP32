@@ -63,6 +63,7 @@ struct RaspiInfo
 {
     RaspiState state;
     ShutdownReason shutdownReason;
+    bool powerButtonPressed;
     bool isBusy;
     bool online;
     bool playerStarted;
@@ -72,6 +73,7 @@ struct RaspiInfo
     {
         state = RaspiState::Restart;
         shutdownReason = ShutdownReason::None;
+        powerButtonPressed = false;
         isBusy = false;
         online = false;
         playerStarted = false;
@@ -100,5 +102,4 @@ private:
     SerialInterface _serial;
     unsigned long _lastStateChange;
     unsigned long _lastHeartbeat;
-    unsigned long _restartDelay;
 };
