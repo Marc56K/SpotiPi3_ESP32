@@ -43,14 +43,25 @@ void loop()
     {
         setupMgr->Update();
 
-        display.Clear();
-        display.RenderSetupScreen(setupMgr->GetWifiSsid());
-        display.Present();
+        if (millis() < 30 * 60 * 1000) // 30 min
+        {
+            display.Clear();
+            display.RenderSetupScreen(setupMgr->GetWifiSsid());
+            display.Present();
 
-        if (is.buttons[0] > 0 || setupMgr->SetupCompleted())
+            if (is.buttons[0] > 0 || setupMgr->SetupCompleted())
+            {
+                delete setupMgr;
+                ESP.restart();
+            }
+        }
+        else // timeout
         {
             delete setupMgr;
-            ESP.restart();
+            display.Clear();
+            display.RenderPowerOffScreen();
+            display.Present(true);
+            PowerManager::PowerOff();
         }
     }
     else
