@@ -89,6 +89,9 @@ void loop()
         else if (pi.state == RaspiState::Shutdown)
         {
             display.Clear();
+            display.Present(true);
+
+            display.Clear();
             switch (pi.shutdownReason)
             {
                 case ShutdownReason::Timeout:
@@ -101,7 +104,8 @@ void loop()
                     display.RenderPowerOffScreen(); 
             }
             display.Present(true);
-            delay(2000);
+            delay(1000);
+
             PowerManager::PowerOff();
         }
         else
