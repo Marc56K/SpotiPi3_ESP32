@@ -10,7 +10,7 @@ const int32_t headerSize = sizeof(int32_t);
 SerialInterface::SerialInterface()
     : _readStarted(false), _readEncodedDataSize(-1)
 {
-    Serial2.begin(115200, SERIAL_8E1);
+    Serial2.begin(115200, SERIAL_8N1);
     Serial2.setRxBufferSize(1024);
 }
 

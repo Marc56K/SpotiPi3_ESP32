@@ -1,7 +1,7 @@
 #include "Raspi.h"
 
 #define MAX_START_DURATION 90000 // 90 sec
-#define SHUTDOWN_DURATION 15000 // 15 sec
+#define SHUTDOWN_DURATION 5000 // 5 sec
 
 Raspi::Raspi(SettingsManager& settings)
     : _settings(settings)
