@@ -104,18 +104,34 @@ namespace InputManager
 
     void Init()
     {
-        pinMode(BT0_PIN, INPUT);
-        attachInterrupt(BT0_PIN, HandleButton0, RISING);
-        pinMode(BT1_PIN, INPUT);
-        attachInterrupt(BT1_PIN, HandleButton1, RISING);
-        pinMode(BT2_PIN, INPUT);
-        attachInterrupt(BT2_PIN, HandleButton2, RISING);
-        pinMode(BT3_PIN, INPUT);
-        attachInterrupt(BT3_PIN, HandleButton3, RISING);
+        // init buttons
+        {
+            pinMode(BT0_PIN, INPUT);
+            attachInterrupt(BT0_PIN, HandleButton0, RISING);
+            pinMode(BT1_PIN, INPUT);
+            attachInterrupt(BT1_PIN, HandleButton1, RISING);
+            pinMode(BT2_PIN, INPUT);
+            attachInterrupt(BT2_PIN, HandleButton2, RISING);
+            pinMode(BT3_PIN, INPUT);
+            attachInterrupt(BT3_PIN, HandleButton3, RISING);
+        }
 
-        pinMode(POTI_PIN, INPUT);
+        // init poti
+        {
+            pinMode(POTI_PIN, INPUT);   
+        }
 
-        mfrc522.PCD_Init();
+        // init MFRC522
+        {
+            // peform hard reset
+            pinMode(RC522_RST_PIN, OUTPUT);		// Now set the RC522_RST_PIN as digital output.
+            digitalWrite(RC522_RST_PIN, LOW);	// Make sure we have a clean LOW state.
+            delayMicroseconds(2);				// 8.8.1 Reset timing requirements says about 100ns. Let us be generous: 2μsl
+            digitalWrite(RC522_RST_PIN, HIGH);	// Exit power down mode. This triggers a hard reset.
+            delay(50);
+
+            mfrc522.PCD_Init();
+        }
     }
 
     InputState GetInputState()
