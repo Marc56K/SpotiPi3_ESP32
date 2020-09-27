@@ -104,7 +104,7 @@ void loop()
                     display.RenderPowerOffScreen(); 
             }
             display.Present(true);
-            delay(1000);
+            delay(500);
 
             PowerManager::PowerOff();
         }

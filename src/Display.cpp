@@ -180,6 +180,16 @@ void Display::RenderPrevTrackIcon()
     _paint.DrawImage(5, 140, &IMG_prev_track);
 }
 
+void Display::RenderSeekForwardIcon()
+{
+    _paint.DrawImage(174, 140, &IMG_seek_forward);
+}
+
+void Display::RenderSeekBackwardIcon()
+{
+    _paint.DrawImage(5, 140, &IMG_seek_backward);
+}
+
 void Display::RenderBusyAnimation(const uint32_t x, const uint32_t y)
 {
     int i = ((millis() / 750) % 6);
@@ -255,11 +265,15 @@ void Display::RenderMediaPlayerScreen(const RaspiInfo& pi, const InputState& is,
         if (pi.state == RaspiState::Idle)
             RenderPlayIcon();
         
-        if (pi.player.track > 0)
+        if (pi.player.track > 0 || pi.player.time < 60.0)
             RenderPrevTrackIcon();
+        else
+            RenderSeekBackwardIcon();
 
         if (pi.player.track < pi.player.tracks - 1)
             RenderNextTrackIcon();
+        else if (pi.player.time + 60.0f < pi.player.duration)
+            RenderSeekForwardIcon();
     }
 
     if (pi.isBusy)

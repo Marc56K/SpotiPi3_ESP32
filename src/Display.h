@@ -29,6 +29,8 @@ public:
     void RenderPauseIcon();
     void RenderNextTrackIcon();
     void RenderPrevTrackIcon();
+    void RenderSeekForwardIcon();
+    void RenderSeekBackwardIcon();
     void RenderBusyAnimation(const uint32_t x, const uint32_t y);
 
     void RenderSetupScreen(const std::string& wifiSsid);

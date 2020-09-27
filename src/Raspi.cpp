@@ -185,6 +185,9 @@ RaspiInfo& Raspi::Update(const PowerState& ps, const InputState& is)
             if (json.containsKey("time"))
                 _raspiInfo.player.time = json["time"].as<float>();
 
+            if (json.containsKey("duration"))
+                _raspiInfo.player.duration = json["duration"].as<float>();
+
             if (json.containsKey("state"))
                 _raspiInfo.player.state = json["state"].as<char*>();
 

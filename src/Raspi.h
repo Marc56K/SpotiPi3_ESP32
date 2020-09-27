@@ -31,6 +31,7 @@ struct PlayerInfo
     int tracks;
     int track;
     float time;
+    float duration;
     std::string state;
     std::string playlistId;
     std::string playlistName;
@@ -44,6 +45,7 @@ struct PlayerInfo
         tracks = 0;
         track = 0;
         time = 0;
+        duration = 0;
         state = "";
         playlistId = "";
         playlistName = "";

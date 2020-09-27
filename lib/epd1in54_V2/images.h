@@ -39,6 +39,8 @@ extern sIMAGE IMG_spinner_5;
 extern sIMAGE IMG_low_bat;
 extern sIMAGE IMG_timeout;
 extern sIMAGE IMG_no_playlist;
+extern sIMAGE IMG_seek_forward;
+extern sIMAGE IMG_seek_backward;
 
 #ifdef __cplusplus
 }
